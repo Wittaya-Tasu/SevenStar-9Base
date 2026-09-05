@@ -2,7 +2,7 @@
 
 WebApp รุ่นทดสอบสำหรับสร้างแผนผังดวงเดิม “เลข 7 ตัว 9 ฐาน” จากวัน เดือน ปี พ.ศ. และเวลาเกิด
 
-## ขอบเขตรุ่น 0.1
+## ขอบเขตรุ่น 0.2
 
 - ปรับวันที่โหราศาสตร์: เวลา 00:00–05:59 น. ย้อนวันทั้งชุด 1 วัน
 - แปลงวันสุริยคติเป็นเดือนจันทรคติจาก Dataset ภายใน Repository
@@ -14,6 +14,14 @@ WebApp รุ่นทดสอบสำหรับสร้างแผนผ�
 - เลือกแสดงอายุเต็มหรืออายุย่าง
 - บันทึก Favorite ในเบราว์เซอร์สำหรับการทดสอบ
 - หน้าดวงจรแยกไว้ แต่ยังไม่คำนวณ
+
+## Calendar Engine v1.1 Candidate
+
+- เพิ่ม `js/thai-lunar-engine.js` เป็น Engine สูตรคณิตศาสตร์แบบไม่ต้องใช้ Dataset
+- แก้รหัสเดือนภายใน `15 → เดือน 5` และ `16 → เดือน 6`
+- ปีนักษัตรเปลี่ยนตั้งแต่ขึ้น 1 ค่ำ เดือน 5
+- เพิ่ม API `thaiBirthDateTimeToLunar()` ซึ่งใช้กฎเวลา 06:00 น. และคืนเลขตั้งต้นทั้ง 3 ค่า
+- WebApp ยังใช้ `js/calendar-engine.js` รุ่นเดิม เพื่อไม่ให้การเพิ่ม Candidate กระทบระบบที่ใช้งานได้แล้ว
 
 ## ชื่อ Repository ที่แนะนำ
 
@@ -83,9 +91,11 @@ SevenStar-9Base/
 ├── assets/styles.css
 ├── data/lunar-month-boundaries.json
 ├── js/calendar-engine.js
+├── js/thai-lunar-engine.js
 ├── js/chart-engine.js
 ├── js/app.js
 ├── tests/run-tests.mjs
+├── tests/calendar-candidate-tests.mjs
 ├── docs/IMPLEMENTATION_NOTES.md
 ├── THIRD_PARTY_NOTICES.md
 ├── LICENSE
@@ -99,4 +109,3 @@ SevenStar-9Base/
 - `effectiveDate` หรือวันที่โหราศาสตร์ ใช้หาเลขตั้งต้นฐาน 1–3
 - Calendar Engine แยกจาก Calculation Engine ฐาน 1–9
 - เมื่อแก้เลขตั้งต้นด้วย Manual Override อายุจะไม่เปลี่ยน
-

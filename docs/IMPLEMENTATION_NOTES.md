@@ -1,4 +1,15 @@
-# Implementation Notes — SevenStar-9Base v0.1
+# Implementation Notes — SevenStar-9Base v0.2
+
+## Engine Strategy
+
+| Engine | สถานะ | หน้าที่ |
+|---|---|---|
+| `js/calendar-engine.js` | Active | Engine เดิมแบบ Dataset ที่ WebApp ใช้งานอยู่ |
+| `js/thai-lunar-engine.js` | Candidate v1.1 | Engine สูตรคณิตศาสตร์ฉบับแก้ไขสำหรับตรวจสอบก่อนสลับใช้งาน |
+
+การเพิ่ม Candidate ไม่เปลี่ยน API หรือผลลัพธ์ของ Active Engine และไม่เปลี่ยนการทำงานของหน้า WebApp
+
+Candidate ผ่าน regression test ทุกวันตั้งแต่ ค.ศ. 1926–2126 รวม 73,414 วัน โดยไม่พบชื่อเดือนว่างหรือเลขเดือนนอกช่วง
 
 ## Data Flow
 
@@ -57,4 +68,3 @@ Daytime Yam:
 5. ช่วงต้นและปลาย Dataset
 6. วันที่อ้างอิงที่เจ้าของระบบยืนยัน
 7. เปรียบเทียบผลกับแหล่งปฏิทินหลักที่เลือกใช้
-

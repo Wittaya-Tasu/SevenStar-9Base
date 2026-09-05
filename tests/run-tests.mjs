@@ -2,6 +2,12 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { calculateAge, calculateCalendar, setCalendarDatasetForTests } from "../js/calendar-engine.js";
 import { calculateNineBases } from "../js/chart-engine.js";
+import {
+  buildRelationColumns,
+  getBadNumbers,
+  getLinkedCellKeys,
+  getRelationSymbols,
+} from "../js/relation-engine.js";
 
 const dataset = JSON.parse(await readFile(new URL("../data/lunar-month-boundaries.json", import.meta.url), "utf8"));
 setCalendarDatasetForTests(dataset);
@@ -27,6 +33,28 @@ assert.deepEqual(chart.bases[7], [6, 4, 2, 7, 5, 3, 1]);
 assert.deepEqual(chart.bases[8], [6, 1, 3, 5, 7, 2, 4]);
 assert.deepEqual(chart.base4Names, ["มหาอุจจ์", "พระเกตุ", "พระราหู", "พระอังคาร", "ราชาโชค", "จักรพรรดิ", "พระพุธ"]);
 
+assert.deepEqual([...getBadNumbers(chart)].sort((a, b) => a - b), [1, 3, 4, 5]);
+assert.deepEqual(
+  buildRelationColumns(chart).map((item) => item.symbols),
+  [
+    ["star-white"],
+    ["star-gold"],
+    ["blue-plus", "star-red"],
+    ["enemy-circle"],
+    ["star-gold"],
+    ["star-gold"],
+    ["double-plus"],
+  ],
+);
+assert.deepEqual(getRelationSymbols(1, 7, new Set()), ["blue-plus"]);
+assert.deepEqual(getRelationSymbols(1, 7, new Set([1])), ["enemy-circle"]);
+assert.deepEqual(getRelationSymbols(2, 12, new Set([2])), ["enemy-circle", "star-red"]);
+
+const verticalExample = calculateNineBases(1, 5, 7);
+assert.equal(verticalExample.bases[2][0], 7);
+assert.equal(verticalExample.bases[3][0], 13);
+assert.equal(getLinkedCellKeys(verticalExample, 3, 1).vertical.has("4:1"), true);
+
 assert.deepEqual(
   calculateAge({ year: 1984, month: 4, day: 22 }, { year: 2026, month: 9, day: 5 }),
   { years: 42, months: 4, days: 14, completed: 42, entering: 43 },
@@ -38,4 +66,5 @@ assert.deepEqual(
 
 console.log("✓ Calendar Engine golden tests passed");
 console.log("✓ Nine-base Calculation Core tests passed");
+console.log("✓ Base 3–4 relation and bad-house tests passed");
 console.log("✓ Completed/entering age tests passed");

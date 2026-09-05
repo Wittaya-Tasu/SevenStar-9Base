@@ -107,7 +107,10 @@ input:focus, select:focus { outline: 3px solid rgba(52, 90, 146, .15); border-co
 .chart-scroll { overflow-x: auto; padding: 4px 2px 13px; }
 .nine-base-chart { min-width: 840px; display: grid; gap: 7px; position: relative; }
 .base-row { display: grid; grid-template-columns: 68px repeat(7, minmax(95px, 1fr)); gap: 7px; align-items: stretch; }
-.base-label { display: grid; place-items: center; border-radius: 9px; background: var(--navy); color: white; font-weight: 700; }
+.base-label {
+  display: grid; place-items: center; border-radius: 9px;
+  background: #eef1f5; color: #8a94a5; font-weight: 400;
+}
 .base-cell {
   min-height: 78px; padding: 7px 4px; border: 1px solid #cbd3df; border-radius: 10px;
   background: #fff; color: var(--ink); text-align: center; transition: .16s ease;
@@ -118,8 +121,42 @@ input:focus, select:focus { outline: 3px solid rgba(52, 90, 146, .15); border-co
 .base-cell .result-name { display: block; margin-top: 5px; color: #725518; font-size: .76rem; font-weight: 700; }
 .base-cell.is-selected { border: 3px solid var(--blue); padding: 5px 2px; background: #eef4fc; }
 .base-cell.is-related:not(.is-selected) { border-color: #c69b43; background: #fff9ec; }
-.relation-space { height: 26px; margin-left: 75px; border-top: 1px dashed #d5bd86; position: relative; }
-.relation-space::after { content: "พื้นที่ความสัมพันธ์ ฐาน 3 ↔ ฐาน 4"; position: absolute; top: -10px; left: 50%; transform: translateX(-50%); padding: 0 8px; background: #fff; color: #a58036; font-size: .7rem; white-space: nowrap; }
+.base-cell.is-vertical-related:not(.is-selected) {
+  border: 2px solid #4d7fb8; background: #edf5ff;
+  box-shadow: inset 0 0 0 2px rgba(77, 127, 184, .12);
+}
+.base-row.is-secondary-base .base-cell { min-height: 39px; padding-block: 4px; }
+.base-row.is-secondary-base .base-cell .house { display: none; }
+.base-row.is-secondary-base .base-cell .number {
+  margin-top: 0; font-size: 1.2rem; font-weight: 400; line-height: 1;
+}
+.relation-row {
+  display: grid; grid-template-columns: 68px repeat(7, minmax(95px, 1fr));
+  gap: 7px; min-height: 34px; align-items: center;
+}
+.relation-label { height: 1px; }
+.relation-cell {
+  min-height: 32px; display: flex; align-items: center; justify-content: center;
+  gap: 4px; border-radius: 8px;
+}
+.relation-symbol {
+  width: 24px; height: 24px; display: inline-grid; place-items: center;
+  flex: 0 0 24px;
+}
+.relation-symbol svg { width: 24px; height: 24px; display: block; fill: currentColor; }
+.relation-symbol .symbol-red { color: #c23c4c; }
+.relation-symbol .symbol-green { color: #29945f; }
+.relation-symbol .symbol-blue { color: #3979b9; }
+.relation-symbol .symbol-gold { color: #c89928; }
+.relation-symbol .symbol-neutral,
+.relation-symbol .symbol-white {
+  color: #fff; stroke: #8792a3; stroke-width: 1.4;
+}
+.relation-symbol .symbol-stroke {
+  fill: none; stroke: currentColor; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.relation-symbol .symbol-double { stroke-width: 1.4; }
 .cell-detail { margin-top: 12px; padding: 12px 14px; border-left: 4px solid var(--gold); border-radius: 7px; background: #fffaf0; color: #4b3a17; }
 
 .empty-view { padding: 70px 24px; text-align: center; }

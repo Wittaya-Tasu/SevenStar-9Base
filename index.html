@@ -14,10 +14,10 @@
 <body>
   <header class="app-header">
     <div>
-      <p class="eyebrow">พรหมญาณพยากรณ์</p>
+      <p class="eyebrow">โยราศาสตร์ วิทยา</p>
       <h1>เลข 7 ตัว 9 ฐาน</h1>
     </div>
-    <span class="version-badge">รุ่นทดสอบ 0.1</span>
+    <span class="version-badge">รุ่นทดสอบ 0.3</span>
   </header>
 
   <nav class="tabs" aria-label="เมนูหลัก">
@@ -32,7 +32,7 @@
         <div class="panel-heading">
           <div>
             <h2>ข้อมูลเจ้าชะตา</h2>
-            <p>ระบบเปลี่ยนวันทางโหราศาสตร์เวลา 06:00 น.</p>
+            <p>เปลี่ยนวันเวลา 06:00 น.</p>
           </div>
           <button id="favorite-button" class="icon-button" type="button" title="บันทึกรายการโปรด" aria-label="บันทึกรายการโปรด">☆</button>
         </div>
@@ -44,13 +44,14 @@
           </label>
           <label class="field">
             <span>วันที่เกิด</span>
-            <input id="birth-day" type="number" min="1" max="31" value="22" required>
+            <input id="birth-day" type="number" min="1" max="31" placeholder="วัน" required>
           </label>
           <label class="field">
             <span>เดือน</span>
             <select id="birth-month" required>
+              <option value="" selected disabled>เลือกเดือน</option>
               <option value="1">มกราคม</option><option value="2">กุมภาพันธ์</option>
-              <option value="3">มีนาคม</option><option value="4" selected>เมษายน</option>
+              <option value="3">มีนาคม</option><option value="4">เมษายน</option>
               <option value="5">พฤษภาคม</option><option value="6">มิถุนายน</option>
               <option value="7">กรกฎาคม</option><option value="8">สิงหาคม</option>
               <option value="9">กันยายน</option><option value="10">ตุลาคม</option>
@@ -59,11 +60,11 @@
           </label>
           <label class="field">
             <span>ปี พ.ศ.</span>
-            <input id="birth-year" type="number" value="2527" required>
+            <input id="birth-year" type="number" placeholder="ปี พ.ศ." required>
           </label>
           <label class="field">
             <span>เวลาเกิด</span>
-            <input id="birth-time" type="time" value="01:49" required>
+            <input id="birth-time" type="time" required>
           </label>
           <label class="field">
             <span>วันที่พิจารณาอายุ</span>
@@ -82,17 +83,17 @@
       <section id="result-area" hidden>
         <div class="summary-grid">
           <article class="summary-card">
-            <span>วันที่โหราศาสตร์</span>
+            <span>สุริยคติ</span>
             <strong id="effective-date">–</strong>
             <small id="day-shift-note"></small>
           </article>
           <article class="summary-card">
-            <span>วัน / เดือนจันทรคติ / ปี</span>
+            <span>จันทรคติ</span>
             <strong id="calendar-summary">–</strong>
             <small id="lunar-detail"></small>
           </article>
           <article class="summary-card">
-            <span>เลขตั้งต้นฐาน 1–3</span>
+            <span>รหัสชะตา</span>
             <strong id="seed-summary">–</strong>
             <small>วัน · เดือน · ปีนักษัตร</small>
           </article>
@@ -104,7 +105,7 @@
         </div>
 
         <details class="override-panel">
-          <summary>ตรวจสอบหรือแก้เลขตั้งต้น</summary>
+          <summary>ตรวจสอบหรือแก้รหัสชะตา</summary>
           <div class="override-grid">
             <label>ฐาน 1 <select id="override-day"></select></label>
             <label>ฐาน 2 <select id="override-month"></select></label>
@@ -148,7 +149,7 @@
   </main>
 
   <footer>
-    <span>Calendar Engine 1.0 · Calculation Core 1.1</span>
+    <span>Calendar Engine 1.0 · Calculation Core 1.1 · UI 0.3</span>
     <span>ช่วงข้อมูล พ.ศ. 2469–2669</span>
   </footer>
   <script type="module" src="./js/app.js"></script>

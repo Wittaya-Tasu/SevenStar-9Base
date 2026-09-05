@@ -1,5 +1,6 @@
 import { calculateAge, calculateCalendar } from "./calendar-engine.js";
 import { BASE4_NAMES, HOUSE_NAMES, calculateNineBases } from "./chart-engine.js";
+import { buildRelationColumns, getLinkedCellKeys } from "./relation-engine.js";
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => Array.from(document.querySelectorAll(selector));
@@ -83,13 +84,45 @@ function cellLabel(baseNumber, column, value, chart) {
   return `ฐาน ${baseNumber} ช่อง ${column + 1}${house ? ` ตำแหน่ง${house}` : ""} เลข ${value}`;
 }
 
+function relationSymbolMarkup(type) {
+  const common = 'viewBox="0 0 24 24" aria-hidden="true" focusable="false"';
+  const shapes = {
+    "neutral-circle": `<svg ${common} class="symbol-neutral"><circle cx="12" cy="12" r="6"/></svg>`,
+    "enemy-circle": `<svg ${common} class="symbol-red"><circle cx="12" cy="12" r="6"/></svg>`,
+    "enemy-triangle": `<svg ${common} class="symbol-red"><path d="M4 6h16L12 20Z"/></svg>`,
+    "friend-triangle": `<svg ${common} class="symbol-green"><path d="M12 4 21 20H3Z"/></svg>`,
+    "double-chevron": `<svg ${common} class="symbol-blue symbol-stroke"><path d="m5 14 7-7 7 7"/><path d="m5 20 7-7 7 7"/></svg>`,
+    "blue-plus": `<svg ${common} class="symbol-blue symbol-stroke"><path d="M12 5v14M5 12h14"/></svg>`,
+    "double-plus": `<svg ${common} class="symbol-blue symbol-stroke symbol-double"><path d="M10 4v16M14 4v16M4 10h16M4 14h16"/></svg>`,
+    "star-gold": `<svg ${common} class="symbol-gold"><path d="m12 2.8 2.8 5.8 6.4.9-4.6 4.5 1.1 6.3-5.7-3-5.7 3L7.4 14 2.8 9.5l6.4-.9Z"/></svg>`,
+    "star-red": `<svg ${common} class="symbol-red"><path d="m12 2.8 2.8 5.8 6.4.9-4.6 4.5 1.1 6.3-5.7-3-5.7 3L7.4 14 2.8 9.5l6.4-.9Z"/></svg>`,
+    "star-white": `<svg ${common} class="symbol-white"><path d="m12 2.8 2.8 5.8 6.4.9-4.6 4.5 1.1 6.3-5.7-3-5.7 3L7.4 14 2.8 9.5l6.4-.9Z"/></svg>`,
+  };
+  return `<span class="relation-symbol">${shapes[type] || ""}</span>`;
+}
+
+function renderRelationRow(chart) {
+  const row = document.createElement("div");
+  row.className = "relation-row";
+  row.innerHTML = '<div class="relation-label" aria-hidden="true"></div>';
+  buildRelationColumns(chart).forEach(({ column, symbols }) => {
+    const cell = document.createElement("div");
+    cell.className = "relation-cell";
+    cell.dataset.column = String(column);
+    cell.setAttribute("aria-label", symbols.length ? `มีสัญลักษณ์ความสัมพันธ์ ${symbols.length} รายการ` : "ไม่มีสัญลักษณ์ความสัมพันธ์");
+    cell.innerHTML = symbols.map(relationSymbolMarkup).join("");
+    row.appendChild(cell);
+  });
+  return row;
+}
+
 function renderChart(chart) {
   const container = $("#nine-base-chart");
   container.innerHTML = "";
   chart.bases.forEach((values, baseIndex) => {
     const baseNumber = baseIndex + 1;
     const row = document.createElement("div");
-    row.className = "base-row";
+    row.className = `base-row${baseNumber >= 5 && baseNumber <= 7 ? " is-secondary-base" : ""}`;
     row.innerHTML = `<div class="base-label">ฐาน ${baseNumber}</div>`;
     values.forEach((value, column) => {
       const button = document.createElement("button");
@@ -110,22 +143,22 @@ function renderChart(chart) {
     });
     container.appendChild(row);
     if (baseNumber === 3) {
-      const relation = document.createElement("div");
-      relation.className = "relation-space";
-      relation.setAttribute("aria-label", "พื้นที่สำหรับแสดงความสัมพันธ์ระหว่างฐาน 3 และฐาน 4");
-      container.appendChild(relation);
+      container.appendChild(renderRelationRow(chart));
     }
   });
 }
 
 function selectCell(target, chart) {
-  const value = target.dataset.value;
   const alreadySelected = target.classList.contains("is-selected");
   clearCellSelection();
   if (alreadySelected) return;
   target.classList.add("is-selected");
+  const links = getLinkedCellKeys(chart, target.dataset.base, target.dataset.column);
   $$(".base-cell").forEach((cell) => {
-    if (cell !== target && cell.dataset.value === value) cell.classList.add("is-related");
+    if (cell === target) return;
+    const key = `${cell.dataset.base}:${cell.dataset.column}`;
+    if (links.equal.has(key)) cell.classList.add("is-related");
+    if (links.vertical.has(key)) cell.classList.add("is-vertical-related");
   });
   const base = Number(target.dataset.base);
   const column = Number(target.dataset.column);
@@ -140,7 +173,7 @@ function selectCell(target, chart) {
 }
 
 function clearCellSelection() {
-  $$(".base-cell").forEach((cell) => cell.classList.remove("is-selected", "is-related"));
+  $$(".base-cell").forEach((cell) => cell.classList.remove("is-selected", "is-related", "is-vertical-related"));
   $("#cell-detail").textContent = "คลิกตำแหน่งในแผนผังเพื่อดูรายละเอียด";
 }
 
@@ -295,4 +328,3 @@ $$('input[name="age-mode"]').forEach((radio) => radio.addEventListener("change",
 }));
 
 initializeRange();
-processForm();

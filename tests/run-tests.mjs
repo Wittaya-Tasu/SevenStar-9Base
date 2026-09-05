@@ -103,3 +103,45 @@ console.log("✓ Nine-base Calculation Core tests passed");
 console.log("✓ Base 3–4 relation and bad-house tests passed");
 console.log("✓ PNG/PDF export core tests passed");
 console.log("✓ Completed/entering age tests passed");
+
+const { toggleSelection, selectionHighlights, houseAppearance, isSpecialResult } = await import('../js/selection-engine.js');
+let picks = toggleSelection(userReportedChart, new Map(), 4, 7);
+let colors = selectionHighlights(userReportedChart, picks);
+assert.deepEqual([...colors.selected], ['4:7']);
+assert(colors.related.has('8:1'));
+assert(!colors.related.has('1:2'));
+for (let col = 1; col <= 6; col++) picks = toggleSelection(userReportedChart, picks, 4, col);
+assert.equal(picks.size, 7);
+colors = selectionHighlights(userReportedChart, picks);
+assert.equal(colors.selected.size, 7);
+assert.equal(colors.related.size, 56);
+picks = toggleSelection(userReportedChart, picks, 4, 7);
+assert.equal(picks.size, 6);
+assert(!selectionHighlights(userReportedChart, picks).related.has('8:1'));
+picks = toggleSelection(userReportedChart, picks, 8, 1);
+assert.equal(picks.size, 7);
+picks = toggleSelection(userReportedChart, picks, 3, 7);
+assert.equal(picks.size, 7);
+assert(selectionHighlights(userReportedChart, picks).selected.has('3:7'));
+assert.equal(houseAppearance(8,2).weight,400);
+assert.equal(houseAppearance(3,6).className,'');
+assert.equal(houseAppearance(3,1).weight,700);
+assert(isSpecialResult(12)); assert(!isSpecialResult(5));
+console.log('✓ Seven-group selection, deselection, blue priority and typography tests passed');
+
+// Exercise the actual export drawing path without a browser or font dependency.
+const { createChartCanvas } = await import('../js/export-engine.js');
+const fills = [];
+const ctx = new Proxy({ measureText: () => ({width: 60}), fill() { fills.push(this.fillStyle); } }, {
+  get(target, key) { return key in target ? target[key] : () => {}; }
+});
+globalThis.document = { fonts: { ready: Promise.resolve() }, createElement: () => ({ getContext: () => ctx }) };
+const exportPicks = toggleSelection(userReportedChart, new Map(), 4, 7);
+await createChartCanvas({ chart: userReportedChart, calendar: {
+  input: {day:22,month:4,yearBe:2527,time:'01:49'}, effectiveDate:'1984-04-21',
+  weekday:{name:'เสาร์'},lunar:{monthName:'เดือน 5'},zodiac:{name:'ชวด'}
+}, highlights: selectionHighlights(userReportedChart, exportPicks) });
+assert.equal(fills.filter(c => c === '#eef4fc').length, 1);
+assert.equal(fills.filter(c => c === '#fff9ec').length, 8);
+delete globalThis.document;
+console.log('✓ Export canvas preserves selected blue and all eight linked yellow cells');

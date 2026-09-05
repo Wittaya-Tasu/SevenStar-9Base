@@ -1,6 +1,7 @@
 import { calculateAge, calculateCalendar } from "./calendar-engine.js";
 import { BASE4_NAMES, HOUSE_NAMES, calculateNineBases } from "./chart-engine.js";
 import { buildRelationColumns, getLinkedCellKeys } from "./relation-engine.js";
+import { toggleSelection, selectionHighlights, houseAppearance, isSpecialResult } from "./selection-engine.js";
 import { exportChartAsPdf, exportChartAsPng } from "./export-engine.js";
 
 const $ = (selector) => document.querySelector(selector);
@@ -10,6 +11,7 @@ const THAI_MONTHS = ["", "มกราคม", "กุมภาพันธ์",
 
 let latestCalendar = null;
 let latestChart = null;
+let selections = new Map();
 
 function bangkokToday() {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -105,6 +107,7 @@ function renderRelationRow(chart) {
 }
 
 function renderChart(chart) {
+  clearCellSelection();
   const container = $("#nine-base-chart");
   container.innerHTML = "";
   chart.bases.forEach((values, baseIndex) => {
@@ -121,10 +124,11 @@ function renderChart(chart) {
       button.dataset.value = String(value);
       const house = HOUSE_NAMES[baseNumber]?.[column] || "";
       if (baseNumber === 4) {
-        button.innerHTML = `<span class="number">${value}</span><span class="result-name">${chart.base4Names[column]}</span>`;
+        button.innerHTML = `<span class="number">${value}</span><span class="result-name ${isSpecialResult(value) ? "" : "plain-result"}">${chart.base4Names[column]}</span>`;
       } else {
-        button.innerHTML = `<span class="house">${house}</span><span class="number">${value}</span>`;
+        button.innerHTML = `<span class="house ${houseAppearance(baseNumber, column + 1).className}">${house}</span><span class="number">${value}</span>`;
       }
+      button.setAttribute("aria-pressed", "false");
       button.setAttribute("aria-label", cellLabel(baseNumber, column, value, chart));
       button.addEventListener("click", () => selectCell(button, chart));
       row.appendChild(button);
@@ -137,33 +141,26 @@ function renderChart(chart) {
 }
 
 function selectCell(target, chart) {
-  const value = target.dataset.value;
-  const alreadySelected = target.classList.contains("is-selected");
-  clearCellSelection();
-  if (alreadySelected) return;
-  target.classList.add("is-selected");
-  const links = getLinkedCellKeys(chart, target.dataset.base, target.dataset.column);
+  selections = toggleSelection(chart, selections, target.dataset.base, target.dataset.column);
+  const highlights = selectionHighlights(chart, selections);
   $$(".base-cell").forEach((cell) => {
-    if (cell === target) return;
     const key = `${cell.dataset.base}:${cell.dataset.column}`;
-    if (links.equal.has(key)) cell.classList.add("is-related");
-    if (links.vertical.has(key)) cell.classList.add("is-vertical-related");
+    cell.classList.toggle("is-selected", highlights.selected.has(key));
+    cell.classList.toggle("is-related", highlights.related.has(key));
+    cell.setAttribute("aria-pressed", String(highlights.selected.has(key)));
   });
-  const base = Number(target.dataset.base);
-  const column = Number(target.dataset.column);
-  const house = HOUSE_NAMES[base]?.[column - 1];
-  const result = base === 4 ? BASE4_NAMES[value] : null;
-  $("#cell-detail").textContent = [
-    `ฐาน ${base} · ช่อง ${column}`,
-    house ? `ตำแหน่ง ${house}` : "",
-    `เลข ${value}`,
-    result ? `ผลลัพธ์ ${result}` : "",
-  ].filter(Boolean).join(" · ");
+  $("#cell-detail").textContent = selections.size
+    ? `เลือก ${selections.size}/7 ชุด · เลขดาว ${[...selections.keys()].sort().join(" · ")} · คลิกช่องเดิมซ้ำเพื่อยกเลิกชุดนั้น`
+    : "คลิกตำแหน่งในแผนผังเพื่อเลือกได้สูงสุด 7 ชุด";
 }
 
 function clearCellSelection() {
-  $$(".base-cell").forEach((cell) => cell.classList.remove("is-selected", "is-related", "is-vertical-related"));
-  $("#cell-detail").textContent = "คลิกตำแหน่งในแผนผังเพื่อดูรายละเอียด";
+  selections = new Map();
+  $$(".base-cell").forEach((cell) => {
+    cell.classList.remove("is-selected", "is-related", "is-vertical-related");
+    cell.setAttribute("aria-pressed", "false");
+  });
+  $("#cell-detail").textContent = "คลิกตำแหน่งในแผนผังเพื่อเลือกได้สูงสุด 7 ชุด";
 }
 
 function calculateAgeFromForm(values) {
@@ -216,6 +213,7 @@ async function handleChartExport(format, button) {
       chart: latestChart,
       calendar: latestCalendar,
       personName: formValues().name,
+      highlights: selectionHighlights(latestChart, selections),
     };
     if (format === "pdf") await exportChartAsPdf(options);
     else await exportChartAsPng(options);

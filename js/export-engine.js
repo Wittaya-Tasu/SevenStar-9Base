@@ -1,3 +1,4 @@
+import { houseAppearance, isSpecialResult } from "./selection-engine.js";
 import { HOUSE_NAMES } from "./chart-engine.js";
 import { buildRelationColumns } from "./relation-engine.js";
 
@@ -84,25 +85,30 @@ function safeFilename(value) {
     .slice(0, 80) || "ไม่ระบุชื่อ";
 }
 
-function drawBaseRow(ctx, chart, baseNumber, y, height, layout) {
+function drawBaseRow(ctx, chart, baseNumber, y, height, layout, highlights) {
   const { outer, labelWidth, columnWidth, gap } = layout;
   drawCard(ctx, outer, y, labelWidth, height, COLORS.label, null);
   drawCenteredText(ctx, `ฐาน ${baseNumber}`, outer + labelWidth / 2, y + height / 2, '400 20px Sarabun, sans-serif', "#8792a3");
 
   chart.bases[baseNumber - 1].forEach((value, column) => {
     const x = outer + labelWidth + gap + column * (columnWidth + gap);
-    drawCard(ctx, x, y, columnWidth, height, COLORS.paper);
+    const key = `${baseNumber}:${column + 1}`;
+    const selected = highlights.selected.has(key);
+    const related = highlights.related.has(key);
+    drawCard(ctx, x, y, columnWidth, height,
+      selected ? "#eef4fc" : related ? "#fff9ec" : COLORS.paper,
+      selected ? "#345a92" : related ? "#c69b43" : COLORS.line);
     const centerX = x + columnWidth / 2;
     const house = HOUSE_NAMES[baseNumber]?.[column] || "";
 
     if (baseNumber === 4) {
-      drawCenteredText(ctx, value, centerX, y + 38, '700 32px Sarabun, sans-serif', COLORS.navy);
-      drawCenteredText(ctx, chart.base4Names[column], centerX, y + 78, '700 17px Sarabun, sans-serif', "#805b12");
+      drawCenteredText(ctx, value, centerX, y + height * 38 / 104, '700 32px Sarabun, sans-serif', COLORS.navy);
+      drawCenteredText(ctx, chart.base4Names[column], centerX, y + height * 78 / 104, `${isSpecialResult(value) ? 700 : 400} 17px Sarabun, sans-serif`, isSpecialResult(value) ? "#725518" : "#000000");
     } else if (baseNumber >= 5 && baseNumber <= 7) {
       drawCenteredText(ctx, value, centerX, y + height / 2, '400 25px Sarabun, sans-serif', COLORS.navy);
     } else {
-      drawCenteredText(ctx, house, centerX, y + 29, '500 17px Sarabun, sans-serif', COLORS.muted);
-      drawCenteredText(ctx, value, centerX, y + 70, '700 32px Sarabun, sans-serif', COLORS.navy);
+      drawCenteredText(ctx, house, centerX, y + height * 29 / 104, `${houseAppearance(baseNumber, column + 1).weight} 17px Sarabun, sans-serif`, houseAppearance(baseNumber, column + 1).color);
+      drawCenteredText(ctx, value, centerX, y + height * 70 / 104, '700 32px Sarabun, sans-serif', COLORS.navy);
     }
   });
 }
@@ -115,7 +121,7 @@ function drawRelationRow(ctx, chart, y, height, layout) {
   });
 }
 
-export async function createChartCanvas({ chart, calendar, personName }) {
+export async function createChartCanvas({ chart, calendar, personName, highlights = { selected: new Set(), related: new Set() } }) {
   if (!chart || !calendar) throw new Error("ยังไม่มีแผนผังสำหรับบันทึก");
   if (document.fonts?.ready) await document.fonts.ready;
 
@@ -129,7 +135,7 @@ export async function createChartCanvas({ chart, calendar, personName }) {
     width - layout.outer * 2 - layout.labelWidth - layout.gap * 7
   ) / 7;
 
-  const rowHeights = { regular: 104, compact: 54, relation: 48 };
+  const rowHeights = { regular: 98.8, compact: 54, relation: 48 };
   const chartStartY = 215;
   const chartHeight =
     rowHeights.regular * 6 +
@@ -174,7 +180,7 @@ export async function createChartCanvas({ chart, calendar, personName }) {
     const heightForRow = baseNumber >= 5 && baseNumber <= 7
       ? rowHeights.compact
       : rowHeights.regular;
-    drawBaseRow(ctx, chart, baseNumber, y, heightForRow, layout);
+    drawBaseRow(ctx, chart, baseNumber, y, heightForRow, layout, highlights);
     y += heightForRow + layout.gap;
     if (baseNumber === 3) {
       drawRelationRow(ctx, chart, y, rowHeights.relation, layout);

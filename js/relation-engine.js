@@ -99,21 +99,33 @@ export function getLinkedCellKeys(chart, selectedBase, selectedColumn) {
   const base = Number(selectedBase);
   const column = Number(selectedColumn);
   const selectedValue = chart.bases[base - 1][column - 1];
+  const linkedValues = new Set([selectedValue]);
   const equal = new Set();
   const vertical = new Set();
 
+  if (base === 4) {
+    chart.bases[3].forEach((value, columnIndex) => {
+      if (value !== selectedValue) return;
+      linkedValues.add(chart.bases[2][columnIndex]);
+      vertical.add(`3:${columnIndex + 1}`);
+      vertical.add(`4:${columnIndex + 1}`);
+    });
+  } else {
+    chart.bases[2].forEach((value, columnIndex) => {
+      if (value !== selectedValue) return;
+      linkedValues.add(chart.bases[3][columnIndex]);
+      vertical.add(`3:${columnIndex + 1}`);
+      vertical.add(`4:${columnIndex + 1}`);
+    });
+  }
+
   chart.bases.forEach((values, baseIndex) => {
     values.forEach((value, columnIndex) => {
-      if (value === selectedValue) equal.add(`${baseIndex + 1}:${columnIndex + 1}`);
+      if (linkedValues.has(value)) equal.add(`${baseIndex + 1}:${columnIndex + 1}`);
     });
   });
 
-  chart.bases[2].forEach((value, columnIndex) => {
-    if (value === selectedValue) vertical.add(`4:${columnIndex + 1}`);
-  });
-  if (base === 4) vertical.add(`3:${column}`);
-
-  return { equal, vertical };
+  return { equal, vertical, linkedValues };
 }
 
 export const relationConstants = { BAD_HOUSES, PAIR_RULES };

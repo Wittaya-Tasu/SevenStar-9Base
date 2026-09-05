@@ -61,6 +61,15 @@ const reverseLinks = getLinkedCellKeys(reverseHighlightExample, 4, 1);
 assert.equal(reverseLinks.vertical.has("3:1"), true);
 assert.equal(reverseLinks.equal.has("1:3"), true);
 
+const screenshotChart = calculateNineBases(5, 5, 3);
+assert.equal(screenshotChart.bases[2][3], 6);
+assert.equal(screenshotChart.bases[3][3], 8);
+const screenshotLinks = getLinkedCellKeys(screenshotChart, 4, 4);
+assert.deepEqual([...screenshotLinks.linkedValues].sort((a, b) => a - b), [6, 8]);
+for (const key of ["1:2", "2:2", "3:4", "4:4", "5:1", "6:7", "7:3", "8:1", "9:1"]) {
+  assert.equal(screenshotLinks.equal.has(key), true, `ต้องไฮไลท์ ${key} เมื่อคลิกเลข 8 ฐาน 4`);
+}
+
 assert.deepEqual(
   calculateAge({ year: 1984, month: 4, day: 22 }, { year: 2026, month: 9, day: 5 }),
   { years: 42, months: 4, days: 14, completed: 42, entering: 43 },

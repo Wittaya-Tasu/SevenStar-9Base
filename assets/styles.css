@@ -141,8 +141,12 @@ input:focus, select:focus { outline: 3px solid rgba(52, 90, 146, .15); border-co
   gap: 4px; border-radius: 8px; text-align: center;
 }
 .relation-name { font-size: .86rem; line-height: 1.15; white-space: nowrap; }
-.relation-style-green-strong { color: #218353; font-weight: 700; }
-.relation-style-red-strong { color: #9f2638; font-weight: 700; }
+.relation-style-green-strong,
+.relation-style-red-strong {
+  padding: 4px 8px; border-radius: 7px; font-weight: 700;
+}
+.relation-style-green-strong { color: #196f45; background: #e5f5eb; }
+.relation-style-red-strong { color: #922337; background: #fdebed; }
 .relation-style-blue-strong { color: #2f68a3; font-weight: 700; }
 .relation-style-blue { color: #2f68a3; font-weight: 400; }
 .relation-style-red { color: #9f2638; font-weight: 400; }

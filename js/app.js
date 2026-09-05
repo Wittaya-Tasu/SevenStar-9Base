@@ -68,7 +68,7 @@ function fillSeedSelects(seeds) {
 function renderCalendarSummary(calendar, age, mode) {
   $("#effective-date").textContent = formatThaiDate(calendar.effectiveDate);
   $("#day-shift-note").textContent = calendar.shifted
-    ? `เวลาเกิดก่อน 06:00 น. จึงย้อนจาก ${formatThaiDate(calendar.civilDate)} 1 วัน`
+    ? `เกิดก่อน 06:00 น.\nย้อนจาก ${formatThaiDate(calendar.civilDate)} 1 วัน`
     : "ใช้วันเดียวกับวันเกิดตามทะเบียน";
   $("#calendar-summary").textContent = `${calendar.weekday.name} · ${calendar.lunar.monthName} · ปี${calendar.zodiac.name}`;
   $("#lunar-detail").textContent = `${calendar.lunar.phase} ${calendar.lunar.lunarDay} ค่ำ · จ.ศ. ${calendar.lunar.chulasakarat} · ปี${calendar.lunar.yearType}`;
@@ -84,33 +84,20 @@ function cellLabel(baseNumber, column, value, chart) {
   return `ฐาน ${baseNumber} ช่อง ${column + 1}${house ? ` ตำแหน่ง${house}` : ""} เลข ${value}`;
 }
 
-function relationSymbolMarkup(type) {
-  const common = 'viewBox="0 0 24 24" aria-hidden="true" focusable="false"';
-  const shapes = {
-    "neutral-circle": `<svg ${common} class="symbol-neutral"><circle cx="12" cy="12" r="6"/></svg>`,
-    "enemy-circle": `<svg ${common} class="symbol-red"><circle cx="12" cy="12" r="6"/></svg>`,
-    "enemy-triangle": `<svg ${common} class="symbol-red"><path d="M4 6h16L12 20Z"/></svg>`,
-    "friend-triangle": `<svg ${common} class="symbol-green"><path d="M12 4 21 20H3Z"/></svg>`,
-    "double-chevron": `<svg ${common} class="symbol-blue symbol-stroke"><path d="m5 14 7-7 7 7"/><path d="m5 20 7-7 7 7"/></svg>`,
-    "blue-plus": `<svg ${common} class="symbol-blue symbol-stroke"><path d="M12 5v14M5 12h14"/></svg>`,
-    "double-plus": `<svg ${common} class="symbol-blue symbol-stroke symbol-double"><path d="M10 4v16M14 4v16M4 10h16M4 14h16"/></svg>`,
-    "star-gold": `<svg ${common} class="symbol-gold"><path d="m12 2.8 2.8 5.8 6.4.9-4.6 4.5 1.1 6.3-5.7-3-5.7 3L7.4 14 2.8 9.5l6.4-.9Z"/></svg>`,
-    "star-red": `<svg ${common} class="symbol-red"><path d="m12 2.8 2.8 5.8 6.4.9-4.6 4.5 1.1 6.3-5.7-3-5.7 3L7.4 14 2.8 9.5l6.4-.9Z"/></svg>`,
-    "star-white": `<svg ${common} class="symbol-white"><path d="m12 2.8 2.8 5.8 6.4.9-4.6 4.5 1.1 6.3-5.7-3-5.7 3L7.4 14 2.8 9.5l6.4-.9Z"/></svg>`,
-  };
-  return `<span class="relation-symbol">${shapes[type] || ""}</span>`;
-}
-
 function renderRelationRow(chart) {
   const row = document.createElement("div");
   row.className = "relation-row";
   row.innerHTML = '<div class="relation-label" aria-hidden="true"></div>';
-  buildRelationColumns(chart).forEach(({ column, symbols }) => {
+  buildRelationColumns(chart).forEach(({ column, relations }) => {
     const cell = document.createElement("div");
     cell.className = "relation-cell";
     cell.dataset.column = String(column);
-    cell.setAttribute("aria-label", symbols.length ? `มีสัญลักษณ์ความสัมพันธ์ ${symbols.length} รายการ` : "ไม่มีสัญลักษณ์ความสัมพันธ์");
-    cell.innerHTML = symbols.map(relationSymbolMarkup).join("");
+    relations.forEach(({ name, style }) => {
+      const label = document.createElement("span");
+      label.className = `relation-name relation-style-${style}`;
+      label.textContent = name;
+      cell.appendChild(label);
+    });
     row.appendChild(cell);
   });
   return row;
@@ -149,6 +136,7 @@ function renderChart(chart) {
 }
 
 function selectCell(target, chart) {
+  const value = target.dataset.value;
   const alreadySelected = target.classList.contains("is-selected");
   clearCellSelection();
   if (alreadySelected) return;

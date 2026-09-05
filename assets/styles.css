@@ -93,6 +93,7 @@ input:focus, select:focus { outline: 3px solid rgba(52, 90, 146, .15); border-co
 .summary-card > span { display: block; color: var(--muted); font-size: .82rem; font-weight: 700; }
 .summary-card strong { display: block; margin: 7px 0 3px; color: var(--navy); font-size: 1.15rem; }
 .summary-card small { color: var(--muted); }
+#day-shift-note { display: block; white-space: pre-line; line-height: 1.45; }
 
 .override-panel { margin: 0 0 16px; padding: 12px 15px; border: 1px solid var(--line); border-radius: 12px; background: #fafbfc; }
 .override-panel summary { font-weight: 700; color: var(--blue); cursor: pointer; }
@@ -132,31 +133,20 @@ input:focus, select:focus { outline: 3px solid rgba(52, 90, 146, .15); border-co
 }
 .relation-row {
   display: grid; grid-template-columns: 68px repeat(7, minmax(95px, 1fr));
-  gap: 7px; min-height: 34px; align-items: center;
+  gap: 7px; min-height: 38px; align-items: center;
 }
 .relation-label { height: 1px; }
 .relation-cell {
-  min-height: 32px; display: flex; align-items: center; justify-content: center;
-  gap: 4px; border-radius: 8px;
+  min-height: 36px; display: flex; align-items: center; justify-content: center;
+  gap: 4px; border-radius: 8px; text-align: center;
 }
-.relation-symbol {
-  width: 24px; height: 24px; display: inline-grid; place-items: center;
-  flex: 0 0 24px;
-}
-.relation-symbol svg { width: 24px; height: 24px; display: block; fill: currentColor; }
-.relation-symbol .symbol-red { color: #c23c4c; }
-.relation-symbol .symbol-green { color: #29945f; }
-.relation-symbol .symbol-blue { color: #3979b9; }
-.relation-symbol .symbol-gold { color: #c89928; }
-.relation-symbol .symbol-neutral,
-.relation-symbol .symbol-white {
-  color: #fff; stroke: #8792a3; stroke-width: 1.4;
-}
-.relation-symbol .symbol-stroke {
-  fill: none; stroke: currentColor; stroke-width: 2;
-  stroke-linecap: round; stroke-linejoin: round;
-}
-.relation-symbol .symbol-double { stroke-width: 1.4; }
+.relation-name { font-size: .86rem; line-height: 1.15; white-space: nowrap; }
+.relation-style-green-strong { color: #218353; font-weight: 700; }
+.relation-style-red-strong { color: #9f2638; font-weight: 700; }
+.relation-style-blue-strong { color: #2f68a3; font-weight: 700; }
+.relation-style-blue { color: #2f68a3; font-weight: 400; }
+.relation-style-red { color: #9f2638; font-weight: 400; }
+.relation-style-black { color: #202939; font-weight: 400; }
 .cell-detail { margin-top: 12px; padding: 12px 14px; border-left: 4px solid var(--gold); border-radius: 7px; background: #fffaf0; color: #4b3a17; }
 
 .empty-view { padding: 70px 24px; text-align: center; }

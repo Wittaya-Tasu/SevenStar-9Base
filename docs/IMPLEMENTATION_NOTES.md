@@ -1,0 +1,60 @@
+# Implementation Notes — SevenStar-9Base v0.1
+
+## Data Flow
+
+```text
+วันเกิดตามทะเบียน + เวลาเกิด
+→ ตรวจวัน Gregorian
+→ สร้างวันที่โหราศาสตร์ (ก่อน 06:00 ลบ 1 วัน)
+→ Lookup เดือนจันทรคติ
+→ หา Boundary ขึ้น 1 ค่ำ เดือน 5
+→ หาปีนักษัตร
+→ สร้างเลขตั้งต้นฐาน 1–3
+→ คำนวณฐาน 1–9
+→ Render แผนผัง
+```
+
+## Calendar Rules
+
+| Rule | Implementation |
+|---|---|
+| วันเปลี่ยนทางโหราศาสตร์ | 06:00 น. Asia/Bangkok |
+| 00:00–05:59 | effectiveDate = civilDate - 1 วัน |
+| ฐาน 1 | วันของ effectiveDate |
+| ฐาน 2 | เดือนจันทรคติของ effectiveDate |
+| ฐาน 3 | ปีนักษัตร เปลี่ยนที่ขึ้น 1 ค่ำ เดือน 5 |
+| เดือน 8 หลัง | code 88 แต่ seed ใช้เดือน 8 → ลดเหลือ 1 |
+
+## Calculation Rules
+
+```text
+B1 = sequence(daySeed)
+B2 = sequence(monthSeed)
+B3 = sequence(zodiacSeed)
+B4[i] = B1[i] + B2[i] + B3[i]
+B5[i] = reduce(B4[i])
+B6[i] = reduce(B5[i] × 2)
+B7[i] = reduce(B6[i] × 2)
+B8 = daytimeYam(start=B5[0])
+start9 = reduce(B5[6] + B8[6])
+B9 = daytimeYam(start9), วางจากขวาไปซ้าย
+```
+
+Daytime Yam:
+
+```text
+1 → 6 → 4 → 2 → 7 → 5 → 3
+```
+
+## Production Gate
+
+ก่อนเปลี่ยนสถานะจาก Test เป็น Production ต้องเพิ่ม Golden Tests สำหรับ:
+
+1. ทุกวันรอยต่อเดือนจันทรคติในช่วงตัวอย่าง
+2. เดือน 8 แรกและเดือน 8 หลัง
+3. ปีอธิกวาร
+4. วันขึ้น 1 ค่ำ เดือน 5 ก่อนและหลัง 06:00 น.
+5. ช่วงต้นและปลาย Dataset
+6. วันที่อ้างอิงที่เจ้าของระบบยืนยัน
+7. เปรียบเทียบผลกับแหล่งปฏิทินหลักที่เลือกใช้
+

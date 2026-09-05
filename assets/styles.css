@@ -105,6 +105,8 @@ input:focus, select:focus { outline: 3px solid rgba(52, 90, 146, .15); border-co
 .chart-section { padding: clamp(16px, 3vw, 26px); }
 .chart-heading { align-items: center; margin-bottom: 18px; }
 .chart-heading h2 { margin-bottom: 0; }
+.chart-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.chart-actions button:disabled { cursor: wait; opacity: .62; }
 .chart-scroll { overflow-x: auto; padding: 4px 2px 13px; }
 .nine-base-chart { min-width: 840px; display: grid; gap: 7px; position: relative; }
 .base-row { display: grid; grid-template-columns: 68px repeat(7, minmax(95px, 1fr)); gap: 7px; align-items: stretch; }
@@ -182,6 +184,7 @@ footer { display: flex; justify-content: space-between; gap: 12px; padding: 20px
   .summary-card { min-height: 0; }
   .override-grid { grid-template-columns: 1fr 1fr; }
   .chart-heading { align-items: start; }
+  .chart-actions { justify-content: flex-start; }
   footer { flex-direction: column; }
 }
 

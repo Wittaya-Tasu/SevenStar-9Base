@@ -1,6 +1,7 @@
 import { calculateAge, calculateCalendar } from "./calendar-engine.js";
 import { BASE4_NAMES, HOUSE_NAMES, calculateNineBases } from "./chart-engine.js";
 import { buildRelationColumns, getLinkedCellKeys } from "./relation-engine.js";
+import { exportChartAsPdf, exportChartAsPng } from "./export-engine.js";
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => Array.from(document.querySelectorAll(selector));
@@ -205,6 +206,28 @@ function applyOverride() {
   $("#seed-summary").nextElementSibling.textContent = "ค่าที่ผู้ใช้ยืนยัน · ใช้เฉพาะรอบนี้";
 }
 
+async function handleChartExport(format, button) {
+  if (!latestCalendar || !latestChart) return;
+  const originalText = button.textContent;
+  button.disabled = true;
+  button.textContent = "กำลังบันทึก…";
+  try {
+    const options = {
+      chart: latestChart,
+      calendar: latestCalendar,
+      personName: formValues().name,
+    };
+    if (format === "pdf") await exportChartAsPdf(options);
+    else await exportChartAsPng(options);
+    $("#cell-detail").textContent = `บันทึกแผนผังเป็น ${format.toUpperCase()} แล้ว`;
+  } catch (error) {
+    $("#cell-detail").textContent = error.message || "ไม่สามารถบันทึกแผนผังได้";
+  } finally {
+    button.disabled = false;
+    button.textContent = originalText;
+  }
+}
+
 function readFavorites() {
   try { return JSON.parse(localStorage.getItem(FAVORITES_KEY) || "[]"); }
   catch { return []; }
@@ -291,6 +314,8 @@ $$('.tab').forEach((button) => button.addEventListener("click", () => setView(bu
 $("#birth-form").addEventListener("submit", processForm);
 $("#apply-override").addEventListener("click", applyOverride);
 $("#clear-selection").addEventListener("click", clearCellSelection);
+$("#export-png").addEventListener("click", (event) => handleChartExport("png", event.currentTarget));
+$("#export-pdf").addEventListener("click", (event) => handleChartExport("pdf", event.currentTarget));
 $("#favorite-button").addEventListener("click", toggleFavorite);
 $("#clear-favorites").addEventListener("click", () => {
   if (readFavorites().length && confirm("ล้างรายการโปรดทั้งหมดในเครื่องนี้หรือไม่")) {

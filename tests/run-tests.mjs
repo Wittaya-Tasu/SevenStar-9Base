@@ -8,6 +8,7 @@ import {
   getLinkedCellKeys,
   getRelations,
 } from "../js/relation-engine.js";
+import { buildPdfFromJpegBytes } from "../js/export-engine.js";
 
 const dataset = JSON.parse(await readFile(new URL("../data/lunar-month-boundaries.json", import.meta.url), "utf8"));
 setCalendarDatasetForTests(dataset);
@@ -59,16 +60,34 @@ assert.equal(getLinkedCellKeys(verticalExample, 4, 1).vertical.has("3:1"), true)
 const reverseHighlightExample = calculateNineBases(1, 1, 1);
 const reverseLinks = getLinkedCellKeys(reverseHighlightExample, 4, 1);
 assert.equal(reverseLinks.vertical.has("3:1"), true);
-assert.equal(reverseLinks.equal.has("1:3"), true);
+assert.equal(reverseLinks.valueToRepeat, 1);
+assert.equal(reverseLinks.equal.has("1:1"), true);
+assert.equal(reverseLinks.equal.has("1:3"), false);
 
 const screenshotChart = calculateNineBases(5, 5, 3);
 assert.equal(screenshotChart.bases[2][3], 6);
 assert.equal(screenshotChart.bases[3][3], 8);
 const screenshotLinks = getLinkedCellKeys(screenshotChart, 4, 4);
-assert.deepEqual([...screenshotLinks.linkedValues].sort((a, b) => a - b), [6, 8]);
-for (const key of ["1:2", "2:2", "3:4", "4:4", "5:1", "6:7", "7:3", "8:1", "9:1"]) {
-  assert.equal(screenshotLinks.equal.has(key), true, `ต้องไฮไลท์ ${key} เมื่อคลิกเลข 8 ฐาน 4`);
+assert.equal(screenshotLinks.valueToRepeat, 6);
+for (const key of ["1:2", "2:2", "3:4", "5:1", "6:7", "7:3", "8:1", "9:1"]) {
+  assert.equal(screenshotLinks.equal.has(key), true, `ต้องไฮไลท์เลข 6 ที่ ${key} เมื่อคลิกเลข 8 ฐาน 4`);
 }
+assert.equal(screenshotLinks.equal.has("4:4"), false, "เลข 8 ฐาน 4 ต้องเป็นเฉพาะช่องที่เลือก");
+
+const userReportedChart = calculateNineBases(4, 2, 2);
+assert.equal(userReportedChart.bases[2][6], 1);
+assert.equal(userReportedChart.bases[3][6], 5);
+const userReportedLinks = getLinkedCellKeys(userReportedChart, 4, 7);
+assert.equal(userReportedLinks.valueToRepeat, 1);
+assert.equal(userReportedLinks.equal.has("1:2"), false, "ห้ามไฮไลท์เลข 5 อื่นเมื่อคลิกเลข 5 ฐาน 4");
+assert.equal(userReportedLinks.equal.has("3:7"), true, "ต้องไฮไลท์เลข 1 ที่ทาสี");
+assert.equal(userReportedLinks.equal.has("8:1"), true, "ต้องไฮไลท์เลข 1 ในตำแหน่งอื่น");
+
+const pdfBytes = buildPdfFromJpegBytes(new Uint8Array([255, 216, 255, 217]), 100, 80);
+const pdfText = new TextDecoder("latin1").decode(pdfBytes);
+assert.equal(pdfText.startsWith("%PDF-1.4"), true);
+assert.equal(pdfText.includes("/Subtype /Image"), true);
+assert.equal(pdfText.endsWith("%%EOF\n"), true);
 
 assert.deepEqual(
   calculateAge({ year: 1984, month: 4, day: 22 }, { year: 2026, month: 9, day: 5 }),
@@ -82,4 +101,5 @@ assert.deepEqual(
 console.log("✓ Calendar Engine golden tests passed");
 console.log("✓ Nine-base Calculation Core tests passed");
 console.log("✓ Base 3–4 relation and bad-house tests passed");
+console.log("✓ PNG/PDF export core tests passed");
 console.log("✓ Completed/entering age tests passed");

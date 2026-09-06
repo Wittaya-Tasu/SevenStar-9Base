@@ -95,7 +95,7 @@ function drawBaseRow(ctx, chart, baseNumber, y, height, layout, highlights) {
     const key = `${baseNumber}:${column + 1}`;
     const selected = highlights.selected.has(key);
     const related = highlights.related.has(key);
-    drawCard(ctx, x, y, columnWidth, height,
+    if (baseNumber < 5 || baseNumber > 7 || selected || related) drawCard(ctx, x, y, columnWidth, height,
       selected ? "#eef4fc" : related ? "#fff9ec" : COLORS.paper,
       selected ? "#345a92" : related ? "#c69b43" : COLORS.line);
     const centerX = x + columnWidth / 2;

@@ -17,7 +17,7 @@
       <p class="eyebrow">โยราศาสตร์ วิทยา</p>
       <h1>เลข 7 ตัว 9 ฐาน</h1>
     </div>
-    <span class="version-badge">รุ่นทดสอบ 0.7</span>
+    <span class="version-badge">รุ่นทดสอบ 0.8</span>
   </header>
 
   <nav class="tabs" aria-label="เมนูหลัก">
@@ -125,6 +125,30 @@
               <button id="export-png" class="secondary-button" type="button">บันทึก PNG</button>
               <button id="export-pdf" class="secondary-button" type="button">บันทึก PDF</button>
               <button id="clear-selection" class="secondary-button" type="button">ล้างการเลือก</button>
+              <select id="reading-topic" class="topic-select" aria-label="เลือกหัวข้อพิจารณาดวง">
+                <option value="">เลือกหัวข้อพิจารณา</option>
+                <optgroup label="เจ้าชะตา">
+                  <option>วาสนา</option><option>ความดี</option><option>ชื่อเสียง</option><option>ความพอดี</option>
+                </optgroup>
+                <optgroup label="การงาน">
+                  <option>การงาน</option><option>การเรียน</option><option>หุ้นส่วน</option><option>อาชีพ</option>
+                </optgroup>
+                <optgroup label="ฐานะการเงิน">
+                  <option>ฐานะการเงิน</option><option>สมบัติฯ</option><option>ยานพาหนะ</option><option>บ้านที่อยู่</option><option>ล้มละลาย*</option>
+                </optgroup>
+                <optgroup label="ความรัก">
+                  <option>ความรัก</option><option>คู่ครอง</option><option>ไม่แต่งงาน</option><option>เป็นหม้าย</option>
+                </optgroup>
+                <optgroup label="สังคม">
+                  <option>ญาติ</option><option>ทายาท</option><option>บริวาร</option><option>สังคม</option><option>ผู้สนับสนุน</option>
+                </optgroup>
+                <optgroup label="สุขภาพ">
+                  <option>สุขภาพ</option><option>ป่วยหนัก</option><option>โรคหายไม่ขาด*</option><option>ศัตรู-หนี้</option><option>อุบัติเหตุ</option>
+                </optgroup>
+                <optgroup label="อื่นๆ">
+                  <option>โหราศาสตร์</option><option>อายุยืน</option>
+                </optgroup>
+              </select>
             </div>
           </div>
           <div class="chart-scroll">
@@ -153,7 +177,7 @@
   </main>
 
   <footer>
-    <span>Calendar Engine 1.0 · Calculation Core 1.1 · UI 0.7</span>
+    <span>Calendar Engine 1.0 · Calculation Core 1.1 · UI 0.8</span>
     <span>ช่วงข้อมูล พ.ศ. 2469–2669</span>
   </footer>
   <script type="module" src="./js/app.js"></script>

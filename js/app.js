@@ -1,3 +1,4 @@
+import { renderScore } from "./score-view.js";
 import { calculateAge, calculateCalendar } from "./calendar-engine.js";
 import { BASE4_NAMES, HOUSE_NAMES, calculateNineBases } from "./chart-engine.js";
 import { buildRelationColumns, getLinkedCellKeys } from "./relation-engine.js";
@@ -107,6 +108,7 @@ function renderRelationRow(chart) {
 }
 
 function renderChart(chart) {
+  renderScore(chart, $("#reading-topic").value);
   clearCellSelection();
   const container = $("#nine-base-chart");
   container.innerHTML = "";
@@ -339,3 +341,5 @@ $$('input[name="age-mode"]').forEach((radio) => radio.addEventListener("change",
 }));
 
 initializeRange();
+
+$("#reading-topic").addEventListener("change", () => { if(latestChart) renderScore(latestChart, $("#reading-topic").value); });

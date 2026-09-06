@@ -75,13 +75,8 @@ export function getRelations(base3Number, base4Number, badNumbers) {
     rule.base3 === Number(base3Number) && rule.base4 === Number(base4Number)
   ));
   const isBad = badNumbers.has(Number(base3Number));
-  const conditional = pairRules.filter((rule) => (
-    (rule.condition === "bad" && isBad) ||
-    (rule.condition === "notBad" && !isBad)
-  ));
-  const selectedPairRules = conditional.length
-    ? conditional
-    : pairRules.filter((rule) => !rule.condition);
+  const selectedPairRules = pairRules.filter(rule => !rule.condition ||
+    (rule.condition === "bad" && isBad) || (rule.condition === "notBad" && !isBad));
   return selectedPairRules.map(({ name, style }) => ({ name, style }));
 }
 

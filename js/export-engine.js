@@ -117,7 +117,7 @@ function drawRelationRow(ctx, chart, y, height, layout) {
   const { outer, labelWidth, columnWidth, gap } = layout;
   buildRelationColumns(chart).forEach(({ column, relations }) => {
     const x = outer + labelWidth + gap + (column - 1) * (columnWidth + gap);
-    drawRelation(ctx, relations[0], x + columnWidth / 2, y + height / 2);
+    relations.forEach((relation, i) => drawRelation(ctx, relation, x + columnWidth / 2, y + height * (i + 1) / (relations.length + 1)));
   });
 }
 

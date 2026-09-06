@@ -49,7 +49,7 @@ assert.deepEqual(
 );
 assert.deepEqual(getRelations(1, 7, new Set()), [{ name: "ธาตุไฟ", style: "blue" }]);
 assert.deepEqual(getRelations(1, 7, new Set([1])), [{ name: "ศัตรู", style: "red" }]);
-assert.deepEqual(getRelations(2, 12, new Set([2])), [{ name: "ศัตรู", style: "red" }]);
+assert.deepEqual(getRelations(2, 12, new Set([2])), [{ name: "สมพล", style: "blue-strong" }, { name: "ศัตรู", style: "red" }]);
 
 const verticalExample = calculateNineBases(1, 5, 7);
 assert.equal(verticalExample.bases[2][0], 7);

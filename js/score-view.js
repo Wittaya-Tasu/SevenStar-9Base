@@ -23,7 +23,7 @@ export function renderScore(chart, topic) {
   for(const item of group.items) {
    const row=document.createElement('div');row.className='score-house';
    const heading=document.createElement('strong');heading.textContent=`${item.house} (ฐาน ${item.base}) · ดาว ${item.star} · ${item.raw===null?'—':number(item.raw)}`;row.append(heading);
-   const text=document.createElement('p');text.textContent=item.raw===null?item.reason:`${[2,4,5,6].includes(item.star)?'ศุภเคราะห์':'บาปเคราะห์'} ${item.planet} · ฐาน ${item.sum} (${item.tier}) ${item.basePoints} · ${item.names.join(' + ')} ${item.relation.points}\nพิเศษดาว ${item.planetBonus} · เงื่อนไขร่วม ${item.relation.joint} · หลายความสัมพันธ์ ${item.relation.multiple} · หักภพเสีย ${item.deduction}`;row.append(text);
+   const text=document.createElement('p');text.textContent=item.raw===null?item.reason:`${[2,4,5,6].includes(item.star)?'ศุภเคราะห์':'บาปเคราะห์'} ${item.planet} · ฐาน ${item.sum} (${item.tier}) ${item.basePoints} · ${(item.names.join(' + ')||'ไพ่พิเศษ')} ${item.relation.points}\nพิเศษดาว ${item.planetBonus} · เงื่อนไขร่วม ${item.relation.joint} · หลายความสัมพันธ์ ${item.relation.multiple} · ไพ่พิเศษ ${item.specialBonus} · หักภพเสีย ${item.deduction}`;row.append(text);
    const bad=document.createElement('p');bad.textContent='ภพเสีย: '+(item.bad.map(b=>`${b.house} ฐาน ${b.base}`).join(' • ')||'ไม่มี');row.append(bad);section.append(row);
   }
   card.append(section);

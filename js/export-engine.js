@@ -1,3 +1,4 @@
+import { scoreTopic, levelFor } from "./score-engine.js";
 import { houseAppearance, isSpecialResult } from "./selection-engine.js";
 import { HOUSE_NAMES } from "./chart-engine.js";
 import { buildRelationColumns } from "./relation-engine.js";
@@ -121,11 +122,13 @@ function drawRelationRow(ctx, chart, y, height, layout) {
   });
 }
 
-export async function createChartCanvas({ chart, calendar, personName, highlights = { selected: new Set(), related: new Set() } }) {
+export async function createChartCanvas({ chart, calendar, personName, topic = "", highlights = { selected: new Set(), related: new Set() } }) {
   if (!chart || !calendar) throw new Error("ยังไม่มีแผนผังสำหรับบันทึก");
   if (document.fonts?.ready) await document.fonts.ready;
 
   const width = 1800;
+  const scoreResult = scoreTopic(chart, topic);
+  const totalWidth = width + 650;
   const layout = {
     outer: 50,
     labelWidth: 92,
@@ -144,13 +147,13 @@ export async function createChartCanvas({ chart, calendar, personName, highlight
     layout.gap * 9;
   const height = chartStartY + chartHeight + 72;
   const canvas = document.createElement("canvas");
-  canvas.width = width;
+  canvas.width = totalWidth;
   canvas.height = height;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("เบราว์เซอร์ไม่รองรับการสร้างภาพ");
 
   ctx.fillStyle = COLORS.paper;
-  ctx.fillRect(0, 0, width, height);
+  ctx.fillRect(0, 0, totalWidth, height);
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
   ctx.fillStyle = COLORS.gold;
@@ -188,11 +191,56 @@ export async function createChartCanvas({ chart, calendar, personName, highlight
     }
   }
 
+  drawScorePanel(ctx, scoreResult, width, chartStartY, 600, chartHeight);
+
   ctx.fillStyle = "#98a2b3";
   ctx.font = '400 16px Sarabun, sans-serif';
   ctx.textAlign = "right";
   ctx.fillText("Calendar Engine 1.0 · SevenStar-9Base", width - layout.outer, height - 28);
   return canvas;
+}
+
+
+function drawScorePanel(ctx, result, x, y, width, height) {
+  const complete=result.status==='complete';
+  const [,level,color]=complete?levelFor(result.score):[0,'ยังไม่มีผลการประเมิน','#757575'];
+  drawCard(ctx,x,y,width,height,'#ffffff',color);
+  const fmt=n=>Number(n.toFixed(2)).toString();
+  let cursor=y+34;
+  const line=(text,size=17,ink=COLORS.ink,bold=false)=>{
+    ctx.font=`${bold?700:400} ${size}px Sarabun, sans-serif`;
+    ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillStyle=ink;
+    // Keep long Thai labels inside the score panel, even with font fallback.
+    const available=width-32;
+    let remaining=String(text);
+    while(remaining.length){
+      let length=remaining.length;
+      while(length>1 && ctx.measureText(remaining.slice(0,length)).width>available) length--;
+      ctx.fillText(remaining.slice(0,length),x+16,cursor);
+      cursor+=size+7;remaining=remaining.slice(length);
+    }
+  };
+  line(result.topic||'คะแนนรายหัวข้อ',25,COLORS.ink,true);
+  if(!complete){
+    line(result.status==='unconfigured'?(result.topic?'ยังไม่ได้กำหนดภพประเมิน':'เลือกหัวข้อเพื่อดูผลการประเมิน'):'ไม่สามารถคำนวณคะแนนได้ครบ');
+    for(const group of result.groups||[])for(const item of group.items)if(item.raw===null)line(`${item.house}: ${item.reason}`);
+    return;
+  }
+  line(`${fmt(result.score)}  ·  ${level}`,32,color,true);
+  ctx.fillStyle='#eceff1';ctx.fillRect(x+16,cursor,width-32,10);
+  ctx.fillStyle=color;ctx.fillRect(x+16,cursor,(width-32)*result.score/100,10);
+  ctx.fillStyle='#ffffff';for(let i=1;i<10;i++)ctx.fillRect(x+16+(width-32)*i/10,cursor,1,10);
+  cursor+=30;
+  line(`คะแนนก่อนจำกัดค่า ${fmt(result.raw)}`,18);
+  line('รายภพ: คะแนนดิบ · โบนัสไพ่พิเศษ · หักภพเสีย',16);
+  for(const group of result.groups){
+    cursor+=8;
+    line(`${group.label} ${group.weight*100}% · เฉลี่ย ${fmt(group.raw)}`,20,COLORS.navy,true);
+    for(const item of group.items){
+      line(`${item.house} (ฐาน ${item.base}) ดาว ${item.star} / ฐาน4 ${item.sum}: ${fmt(item.raw)} · +${item.specialBonus} · −${item.deduction}`,16);
+      line(`${item.names.join(' + ')||'ไพ่พิเศษ'} · ${item.tier} · ภพเสีย ${item.bad.map(b=>b.house).join(', ')||'ไม่มี'}`,14,COLORS.muted);
+    }
+  }
 }
 
 function canvasToBlob(canvas, type, quality) {

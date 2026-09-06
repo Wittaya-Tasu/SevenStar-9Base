@@ -216,6 +216,7 @@ async function handleChartExport(format, button) {
       calendar: latestCalendar,
       personName: formValues().name,
       highlights: selectionHighlights(latestChart, selections),
+      topic: $("#reading-topic").value,
     };
     if (format === "pdf") await exportChartAsPdf(options);
     else await exportChartAsPng(options);

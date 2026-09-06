@@ -17,6 +17,7 @@ export function relationScore(tier, names) {
   if(good>9) throw new Error('ยังไม่กำหนดโบนัสเกิน 9 ความสัมพันธ์');
   return {points,joint,good,multiple:bonusCounts[good]};
 }
+export function specialCardBonus(sum) { return ([9,11,14,16,18,19].includes(sum)?30:0)+(sum===19?25:0)+(sum===13?20:0); }
 export function scoreHouse(chart, base, column) {
   const star=chart.bases[base-1][column-1];
   const pairColumn=chart.bases[2].indexOf(star);
@@ -30,13 +31,14 @@ export function scoreHouse(chart, base, column) {
   if(bad.length && sum===6) tier='ต่ำ';
   const names=getRelations(star,sum,getBadNumbers(chart)).map(r=>r.name);
   const item={base,column,house:HOUSE_NAMES[base][column-1],star,sum,tier,bad,major,minor,deduction,names};
-  if(!names.length) return {...item,raw:null,reason:`ยังไม่กำหนดความสัมพันธ์คู่ ${star}–${sum}`};
+  const specialBonus=specialCardBonus(sum);
+  if(!names.length && !specialBonus) return {...item,raw:null,reason:`ยังไม่กำหนดความสัมพันธ์คู่ ${star}–${sum}`};
   const relation=relationScore(tier,names);
   const planet=[2,4,5,6].includes(star)?35:15;
   const planetBonus=star===5?5:star===7?-5:0;
   const basePoints={สูง:25,ปานกลาง:15,ต่ำ:5}[tier];
-  const raw=planet+basePoints+relation.points+planetBonus+relation.joint+relation.multiple-deduction;
-  return {...item,planet,planetBonus,basePoints,relation,raw};
+  const raw=planet+basePoints+relation.points+planetBonus+relation.joint+relation.multiple+specialBonus-deduction;
+  return {...item,planet,planetBonus,basePoints,relation,specialBonus,raw};
 }
 export function scoreTopic(chart, topic) {
   if(!TOPICS[topic]) return {topic,status:'unconfigured'};

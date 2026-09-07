@@ -1,4 +1,5 @@
 import { careerStarLabel, careerPositionLabel, CAREER_BANDS } from './career-engine.js';
+import { occupationsFor } from './occupation-data.js';
 
 export function renderCareerCard(card,result) {
   card.classList.add('career-card');
@@ -11,12 +12,23 @@ export function renderCareerCard(card,result) {
     const heading=document.createElement('h4');heading.textContent=`ลำดับ ${band.rank}`;section.append(heading);
     const numbers=document.createElement('div');numbers.className='career-stars';
     for(const item of band.stars) {
+      const disclosure=document.createElement('details');disclosure.className='career-occupations';
+      disclosure.setAttribute('data-career-star',String(item.star));
+      const toggle=document.createElement('summary');
       const chip=document.createElement('span');chip.className=`career-star career-rank-${band.rank}`;
       chip.style.backgroundColor=band.fill;chip.style.color=band.ink;
       chip.textContent=careerStarLabel(item);
       chip.title=item.positions.map(careerPositionLabel).join(' · ');
       chip.setAttribute('aria-label',`ดาว ${item.star}${item.isMain?' พบในภพหลัก':''} ลำดับ ${band.rank}`);
-      numbers.append(chip);
+      toggle.append(chip);
+      const closed=document.createElement('span');closed.className='career-show-label';closed.textContent='แสดงอาชีพ';toggle.append(closed);
+      const opened=document.createElement('span');opened.className='career-hide-label';opened.textContent='ซ่อนอาชีพ';toggle.append(opened);
+      disclosure.append(toggle);
+      const list=document.createElement('ul');list.className='occupation-list';
+      for(const label of occupationsFor(item.star)) {
+        const li=document.createElement('li');li.textContent=label;list.append(li);
+      }
+      disclosure.append(list);numbers.append(disclosure);
     }
     section.append(numbers);
     const explanation=document.createElement('p');explanation.textContent=band.description;section.append(explanation);

@@ -1,6 +1,7 @@
 import { scoreTopic, levelFor, groupSummary, factorSummary } from "./score-engine.js";
 import { topicHighlights, GROUP_STYLES } from "./topic-engine.js";
 import { careerStarLabel, careerPositionLabel } from "./career-engine.js";
+import { occupationsFor } from "./occupation-data.js";
 import { houseAppearance, isSpecialResult } from "./selection-engine.js";
 import { HOUSE_NAMES } from "./chart-engine.js";
 import { buildRelationColumns } from "./relation-engine.js";
@@ -133,12 +134,13 @@ function drawRelationRow(ctx, chart, y, height, layout) {
   });
 }
 
-export async function createChartCanvas({ chart, calendar, personName, topic = "", gender = "", highlights = { selected: new Set(), related: new Set() } }) {
+export async function createChartCanvas({ chart, calendar, personName, topic = "", gender = "", expandedCareerStars = [], highlights = { selected: new Set(), related: new Set() } }) {
   if (!chart || !calendar) throw new Error("ยังไม่มีแผนผังสำหรับบันทึก");
   if (document.fonts?.ready) await document.fonts.ready;
 
   const width = 1800;
   const scoreResult = scoreTopic(chart, topic, gender);
+  if (scoreResult.kind==='career') scoreResult.expandedCareerStars = new Set(expandedCareerStars.map(Number));
   highlights = {...highlights,topic:topicHighlights(chart,topic,gender)};
   const totalWidth = width + 650;
   const layout = {
@@ -290,9 +292,8 @@ function drawCareerPanel(ctx,result,x,y,width,height,measureOnly) {
   for(const band of result.bands) {
     cursor+=10;
     line(`ลำดับ ${band.rank}`,18,COLORS.ink,true);
-    let left=x+16;
+    const left=x+16;
     for(const item of band.stars) {
-      if(left+60>x+width-16) {left=x+16;cursor+=54;}
       if(!measureOnly) {
         drawCard(ctx,left,cursor,60,46,band.fill,null);
         ctx.save();
@@ -300,9 +301,12 @@ function drawCareerPanel(ctx,result,x,y,width,height,measureOnly) {
         drawCenteredText(ctx,careerStarLabel(item),left+30,cursor+23,'700 28px Sarabun, sans-serif',band.ink);
         ctx.restore();
       }
-      left+=70;
+      cursor+=62;
+      if(result.expandedCareerStars?.has(item.star)) {
+        cursor+=drawOccupationColumns(ctx,occupationsFor(item.star),left,cursor,width-32,measureOnly);
+        cursor+=10;
+      }
     }
-    cursor+=62;
     line(band.description,17);
   }
   cursor+=14;
@@ -315,6 +319,35 @@ function drawCareerPanel(ctx,result,x,y,width,height,measureOnly) {
     line('ภพเสียที่เชื่อม: '+(item.bad.map(p=>`${p.house} ฐาน ${p.base}`).join(' · ')||'ไม่มี'),16,COLORS.muted);
   }
   return cursor-y+24;
+}
+
+function drawOccupationColumns(ctx,labels,x,y,width,measureOnly) {
+  const gap=24, columnWidth=(width-gap)/2, fontSize=17, lineHeight=26;
+  ctx.font=`400 ${fontSize}px Sarabun, sans-serif`;
+  const wrap=text=>{
+    const segments=typeof Intl.Segmenter==='function'
+      ? [...new Intl.Segmenter('th',{granularity:'grapheme'}).segment(text)].map(s=>s.segment)
+      : Array.from(text);
+    const lines=[];let current='';
+    for(const segment of segments) {
+      if(current && ctx.measureText(current+segment).width>columnWidth-16) {lines.push(current);current='';}
+      current+=segment;
+    }
+    if(current)lines.push(current);
+    return lines;
+  };
+  let cursor=y;
+  for(let i=0;i<labels.length;i+=2) {
+    const row=labels.slice(i,i+2).map(wrap);
+    row.forEach((lines,column)=>{
+      if(measureOnly)return;
+      ctx.textAlign='left';ctx.textBaseline='top';ctx.fillStyle=COLORS.ink;
+      ctx.fillText('•',x+column*(columnWidth+gap),cursor);
+      lines.forEach((text,j)=>ctx.fillText(text,x+column*(columnWidth+gap)+14,cursor+j*lineHeight));
+    });
+    cursor+=Math.max(...row.map(lines=>lines.length))*lineHeight+8;
+  }
+  return cursor-y;
 }
 
 function canvasToBlob(canvas, type, quality) {

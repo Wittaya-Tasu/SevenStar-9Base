@@ -244,6 +244,7 @@ async function handleChartExport(format, button) {
       highlights: selectionHighlights(latestChart, selections),
       topic: $("#reading-topic").value,
       gender: $("#person-gender").value,
+      expandedCareerStars: $$(".career-occupations[open]").map(node=>Number(node.getAttribute('data-career-star'))),
     };
     if (format === "pdf") await exportChartAsPdf(options);
     else await exportChartAsPng(options);

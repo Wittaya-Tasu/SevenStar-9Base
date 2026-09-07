@@ -6,6 +6,7 @@ import {scoreTopic} from '../js/score-engine.js';
 import {getBadNumbers,getRelations} from '../js/relation-engine.js';
 import {createChartCanvas} from '../js/export-engine.js';
 import {renderScore} from '../js/score-view.js';
+import {OCCUPATIONS,occupationsFor,OCCUPATION_REVIEW} from '../js/occupation-data.js';
 
 const cases=[
  [2,[],false,1],[1,[],false,2],[2,[],true,3],[1,[],true,4],
@@ -64,6 +65,22 @@ globalThis.document={querySelector:()=>panel,createElement:tag=>new Element(tag)
 const flatten=e=>[e,...e.children.flatMap(flatten)];
 renderScore(chart,CAREER_TOPIC);
 let elements=flatten(panel);
+assert.deepEqual(Object.keys(OCCUPATIONS),['1','2','3','4','5','6','7']);
+assert.deepEqual(Object.values(OCCUPATIONS).map(items=>items.length),[8,19,22,30,20,27,30]);
+for(const labels of Object.values(OCCUPATIONS)) {
+ assert(labels.every(label=>typeof label==='string'&&label.trim()));
+ assert.equal(new Set(labels).size,labels.length);
+}
+assert(!occupationsFor(4).includes('แชร์ลูกโซ่'));
+assert.equal(OCCUPATION_REVIEW[0].label,'แชร์ลูกโซ่');
+const occupationSections=elements.filter(e=>e.className==='career-occupations');
+assert.equal(occupationSections.length,6);
+for(const section of occupationSections) {
+ assert.equal(section.tag,'details');
+ assert.notEqual(section.open,true);
+ assert.equal(section.children[0].tag,'summary');
+ assert.deepEqual(section.children[1].children.map(li=>li.textContent),occupationsFor(Number(section.attributes['data-career-star'])));
+}
 assert.equal(elements.filter(e=>e.className.startsWith('career-star ')).length,6);
 assert.equal(elements.filter(e=>e.className==='score-value').length,0);
 assert.equal(elements.filter(e=>e.attributes.role==='meter').length,0);
@@ -83,5 +100,18 @@ for(const label of ['2','6','7*','5*','3*','4'])assert(texts.some(t=>t.x>1800&&t
 assert(!texts.some(t=>t.t.includes('คะแนนรวมถ่วงน้ำหนัก')));
 assert(texts.every(t=>t.y<canvas.height-15));
 for(const band of result.bands)assert(fills.includes(band.fill));
+assert(!texts.some(t=>t.t==='ชิปปิ้ง'));
+texts.length=0;
+const expanded=await createChartCanvas({chart,calendar,topic:CAREER_TOPIC,expandedCareerStars:[2]});
+assert(texts.some(t=>t.t==='ชิปปิ้ง'));
+assert(!texts.some(t=>t.t==='สัปเหร่อ'));
+assert(expanded.height>canvas.height);
+assert(texts.every(t=>t.y<expanded.height-15));
+texts.length=0;
+const allExpanded=await createChartCanvas({chart,calendar,topic:CAREER_TOPIC,expandedCareerStars:[1,2,3,4,5,6,7]});
+assert(texts.some(t=>t.t==='สัปเหร่อ'));
+assert(texts.every(t=>t.y<allExpanded.height-15));
+assert(allExpanded.height>expanded.height);
 delete globalThis.document;
 console.log('✓ Career card and switch back to scores, exported colors/asterisks, no overall score, full height');
+console.log('✓ 156 occupation labels, seven planets, native collapsed disclosures, selective export and full-list height');

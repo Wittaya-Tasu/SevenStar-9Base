@@ -1,5 +1,6 @@
 import { scoreTopic, levelFor, groupSummary, factorSummary } from "./score-engine.js";
 import { topicHighlights, GROUP_STYLES } from "./topic-engine.js";
+import { careerStarLabel, careerPositionLabel } from "./career-engine.js";
 import { houseAppearance, isSpecialResult } from "./selection-engine.js";
 import { HOUSE_NAMES } from "./chart-engine.js";
 import { buildRelationColumns } from "./relation-engine.js";
@@ -223,6 +224,7 @@ export async function createChartCanvas({ chart, calendar, personName, topic = "
 
 
 function drawScorePanel(ctx, result, x, y, width, height, measureOnly=false) {
+  if(result.kind==='career') return drawCareerPanel(ctx,result,x,y,width,height,measureOnly);
   const complete=result.status==='complete';
   const [,level,color]=complete?levelFor(result.score):[0,'ยังไม่มีผลการประเมิน','#757575'];
   if(!measureOnly) drawCard(ctx,x,y,width,height,'#ffffff',color);
@@ -264,6 +266,53 @@ function drawScorePanel(ctx, result, x, y, width, height, measureOnly=false) {
       line(`${item.relation.chosen.join(' / ')} · ${item.tier} · ภพเสียหลัก ${item.major} / รอง ${item.minor}`,16,COLORS.muted);
       line('ภพเสีย: '+(item.bad.map(b=>`${b.house} ฐาน ${b.base}`).join(', ')||'ไม่มี'),16,COLORS.muted);
     }
+  }
+  return cursor-y+24;
+}
+
+function drawCareerPanel(ctx,result,x,y,width,height,measureOnly) {
+  if(!measureOnly) drawCard(ctx,x,y,width,height,'#ffffff','#a68b48');
+  let cursor=y+34;
+  const line=(text,size=17,color=COLORS.ink,bold=false)=>{
+    ctx.font=`${bold?700:400} ${size}px Sarabun, sans-serif`;
+    ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillStyle=color;
+    let remaining=String(text);
+    while(remaining.length) {
+      let n=remaining.length;
+      while(n>1&&ctx.measureText(remaining.slice(0,n)).width>width-32)n--;
+      if(!measureOnly)ctx.fillText(remaining.slice(0,n),x+16,cursor);
+      cursor+=size+7;remaining=remaining.slice(n);
+    }
+  };
+  line(result.topic,25,COLORS.ink,true);
+  line('เลขดาวเรียงจากกลุ่มที่ดีที่สุดลงมา');
+  line('* พบในภพหลัก: อัตตะ ฐาน 1 / ตะนุ ฐาน 2 / กัมมะ ฐาน 3');
+  for(const band of result.bands) {
+    cursor+=10;
+    line(`ลำดับ ${band.rank}`,18,COLORS.ink,true);
+    let left=x+16;
+    for(const item of band.stars) {
+      if(left+60>x+width-16) {left=x+16;cursor+=54;}
+      if(!measureOnly) {
+        drawCard(ctx,left,cursor,60,46,band.fill,null);
+        ctx.save();
+        if(band.rank===4) {ctx.shadowColor='#49505b';ctx.shadowBlur=2;ctx.shadowOffsetY=1;}
+        drawCenteredText(ctx,careerStarLabel(item),left+30,cursor+23,'700 28px Sarabun, sans-serif',band.ink);
+        ctx.restore();
+      }
+      left+=70;
+    }
+    cursor+=62;
+    line(band.description,17);
+  }
+  cursor+=14;
+  line('ตำแหน่งและเหตุผล',20,COLORS.ink,true);
+  for(const item of result.stars) {
+    cursor+=7;
+    line(`ดาว ${careerStarLabel(item)} · ลำดับ ${item.rank}`,18,COLORS.ink,true);
+    line(item.positions.map(careerPositionLabel).join(' · '),16);
+    line(`ฐาน 3 เลข ${item.star} → ฐาน 4 เลข ${item.sum} · ${item.names.join(' / ')||'ไม่มีศัตรูหรือศัตรูใหญ่'}`,16);
+    line('ภพเสียที่เชื่อม: '+(item.bad.map(p=>`${p.house} ฐาน ${p.base}`).join(' · ')||'ไม่มี'),16,COLORS.muted);
   }
   return cursor-y+24;
 }

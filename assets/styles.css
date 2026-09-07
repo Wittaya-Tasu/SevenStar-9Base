@@ -230,3 +230,11 @@ footer { display: flex; justify-content: space-between; gap: 12px; padding: 20px
 .base-cell[data-topic-group]:not(.is-selected):not(.is-related) .house.bad-house { background:#fff0f2; border-radius:4px; width:fit-content; margin-inline:auto; padding-inline:5px; }
 .base-cell:focus-visible { outline:3px solid #68a6e6; outline-offset:2px; }
 .score-card p, .score-card details, .base-cell .house { font-size:.875rem; }
+
+.career-card { --score-color:#a68b48; }
+.career-band { padding:12px 0; border-bottom:1px solid var(--line); }
+.career-band h4 { font-size:.875rem; margin:0 0 7px; font-weight:500; }
+.career-stars { display:flex; flex-wrap:wrap; gap:8px; }
+.career-star { display:inline-flex; align-items:center; justify-content:center; min-width:48px; height:46px; padding:0 9px; border-radius:8px; font-size:1.5rem; font-weight:700; line-height:1; }
+.career-star.career-rank-4 { text-shadow:0 1px 2px #49505b; }
+.career-card .career-legend { color:var(--muted); }

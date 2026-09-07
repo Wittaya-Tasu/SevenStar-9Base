@@ -1,0 +1,87 @@
+import assert from 'node:assert/strict';
+import {calculateNineBases} from '../js/chart-engine.js';
+import {analyzeCareer,careerRank,CAREER_BANDS,careerStarLabel} from '../js/career-engine.js';
+import {CAREER_TOPIC,topicHighlights,resolveTopic} from '../js/topic-engine.js';
+import {scoreTopic} from '../js/score-engine.js';
+import {getBadNumbers,getRelations} from '../js/relation-engine.js';
+import {createChartCanvas} from '../js/export-engine.js';
+import {renderScore} from '../js/score-view.js';
+
+const cases=[
+ [2,[],false,1],[1,[],false,2],[2,[],true,3],[1,[],true,4],
+ [2,['ศัตรู'],false,5],[1,['ศัตรูใหญ่'],false,6],
+ [2,['ศัตรูใหญ่'],true,7],[1,['ศัตรู'],true,8],
+];
+for(const [star,names,bad,rank] of cases)assert.equal(careerRank(star,names,bad),rank);
+assert.equal(careerRank(2,['สมพล','ศัตรู'],true),7);
+assert.equal(careerRank(5,['ธาตุดิน','ศัตรู'],true),7);
+assert.deepEqual(CAREER_BANDS.map(b=>b.ink),['#ffffff','#ffffff','#000000','#ffffff','#ffffff','#000000','#8b1e2d','#ffffff']);
+assert.equal(CAREER_BANDS[5].fill,CAREER_BANDS[6].fill);
+
+const chart=calculateNineBases(7,5,1);
+const result=analyzeCareer(chart);
+assert.deepEqual(result.bands.map(b=>[b.rank,b.stars.map(careerStarLabel)]),[
+ [1,['2','6']],[2,['7*']],[3,['5*']],[4,['3*']],[7,['4']],
+]);
+assert.deepEqual(resolveTopic(chart,CAREER_TOPIC).groups.map(g=>g.positions.map(p=>p.key)),[
+ ['1:1','2:1','3:3'],['1:3','2:2','1:6','3:4','3:2'],
+]);
+const five=result.stars.find(s=>s.star===5);
+assert.equal(five.isMain,true);
+assert.equal(five.positions.length,2);
+assert.equal('score' in result,false);
+assert.equal('raw' in result,false);
+assert.equal(scoreTopic(chart,CAREER_TOPIC).kind,'career');
+
+for(let a=1;a<=7;a++)for(let b=1;b<=7;b++)for(let c=1;c<=7;c++){
+ const ch=calculateNineBases(a,b,c),r=analyzeCareer(ch);
+ const colors=topicHighlights(ch,CAREER_TOPIC);
+ assert.equal(colors.size,8);
+ assert.equal([...colors.values()].filter(i=>i===0).length,3);
+ assert.equal(new Set(r.stars.map(s=>s.star)).size,r.stars.length);
+ assert.equal(r.stars.reduce((n,s)=>n+s.positions.length,0),8);
+ const main=new Set([ch.bases[0][0],ch.bases[1][0],ch.bases[2][2]]);
+ for(const s of r.stars){
+  assert.equal(s.isMain,main.has(s.star));
+  assert.equal(s.sum,ch.bases[3][ch.bases[2].indexOf(s.star)]);
+  assert.equal(s.bad.length>0,getBadNumbers(ch).has(s.star));
+  const enemy=getRelations(s.star,s.sum,getBadNumbers(ch)).some(r=>['ศัตรู','ศัตรูใหญ่'].includes(r.name));
+  assert.equal(s.rank>=5,enemy);
+ }
+ assert(r.stars.every((s,i)=>i===0||s.rank>=r.stars[i-1].rank));
+}
+console.log('✓ Eight ranking conditions, exact houses, any-enemy precedence, 343 charts, main-star markers');
+
+// Test the real view builder with a minimal DOM adapter, without browser automation.
+class Element {
+ constructor(tag){this.tag=tag;this.children=[];this.textContent='';this.className='';this.attributes={};this.style={setProperty(){}};this.classList={add:name=>{this.className+=' '+name;}};}
+ append(...nodes){this.children.push(...nodes);}
+ replaceChildren(...nodes){this.children=nodes;}
+ setAttribute(k,v){this.attributes[k]=String(v);}
+}
+const panel=new Element('aside');
+globalThis.document={querySelector:()=>panel,createElement:tag=>new Element(tag)};
+const flatten=e=>[e,...e.children.flatMap(flatten)];
+renderScore(chart,CAREER_TOPIC);
+let elements=flatten(panel);
+assert.equal(elements.filter(e=>e.className.startsWith('career-star ')).length,6);
+assert.equal(elements.filter(e=>e.className==='score-value').length,0);
+assert.equal(elements.filter(e=>e.attributes.role==='meter').length,0);
+assert(elements.some(e=>e.textContent==='5*'));
+renderScore(chart,'ฐานะการเงิน');
+elements=flatten(panel);
+assert.equal(elements.filter(e=>e.className==='score-value').length,1);
+assert.equal(elements.filter(e=>e.className.startsWith('career-star ')).length,0);
+
+const texts=[],fills=[];
+const ctx=new Proxy({measureText:t=>({width:Array.from(t).length*9}),fillText:(t,x,y)=>texts.push({t:String(t),x,y}),fill:()=>fills.push(ctx.fillStyle),save(){},restore(){}},{get:(t,k)=>k in t?t[k]:()=>{}});
+globalThis.document={fonts:{ready:Promise.resolve()},createElement:()=>({getContext:()=>ctx})};
+const calendar={input:{day:22,month:4,yearBe:2527,time:'01:49'},effectiveDate:'1984-04-21',weekday:{name:'เสาร์'},lunar:{monthName:'เดือน 5'},zodiac:{name:'ชวด'}};
+const canvas=await createChartCanvas({chart,calendar,topic:CAREER_TOPIC});
+assert(texts.some(t=>t.t===CAREER_TOPIC));
+for(const label of ['2','6','7*','5*','3*','4'])assert(texts.some(t=>t.x>1800&&t.t===label));
+assert(!texts.some(t=>t.t.includes('คะแนนรวมถ่วงน้ำหนัก')));
+assert(texts.every(t=>t.y<canvas.height-15));
+for(const band of result.bands)assert(fills.includes(band.fill));
+delete globalThis.document;
+console.log('✓ Career card and switch back to scores, exported colors/asterisks, no overall score, full height');

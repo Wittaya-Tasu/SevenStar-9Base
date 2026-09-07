@@ -1,5 +1,6 @@
 import { scoreTopic, levelFor, groupSummary, factorSummary } from './score-engine.js';
 import { GROUP_STYLES } from './topic-engine.js';
+import { renderCareerCard } from './career-view.js';
 const number=n=>Number(n.toFixed(2)).toLocaleString('th-TH');
 export function renderScore(chart, topic, gender = '') {
  const panel=document.querySelector('#score-panel');
@@ -7,6 +8,7 @@ export function renderScore(chart, topic, gender = '') {
  const result=scoreTopic(chart,topic,gender);
  const card=document.createElement('article');card.className='score-card';panel.append(card);
  const title=document.createElement('h3');title.textContent=topic||'คะแนนรายหัวข้อ';card.append(title);
+ if(result.kind==='career') { renderCareerCard(card,result);return result; }
  if(result.status==='unconfigured') {
   const p=document.createElement('p');p.textContent=topic?'ยังไม่ได้กำหนดภพประเมินสำหรับเรื่องนี้':'เลือกหัวข้อเพื่อดูผลการประเมิน';card.append(p);return result;
  }

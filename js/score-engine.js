@@ -1,6 +1,7 @@
 import { HOUSE_NAMES } from './chart-engine.js';
 import { getBadNumbers, getRelations, relationConstants } from './relation-engine.js';
 import { resolveTopic } from './topic-engine.js';
+import { analyzeCareer } from './career-engine.js';
 
 export const LEVELS = [[80,'ดีมาก','#a67c00'],[60,'ดี','#196f45'],[50,'ปานกลาง','#000000'],[40,'แย่','#c95560'],[30,'แย่มาก','#8b1e2d']];
 export function levelFor(score) { return LEVELS.find(([min])=>score>=min) || [0,'นอกช่วงคะแนน','#667085']; }
@@ -45,6 +46,7 @@ export function scoreHouse(chart, base, column) {
 export function scoreTopic(chart, topic, gender = '') {
   const definition=resolveTopic(chart,topic,gender);
   if(!definition) return {topic,status:'unconfigured'};
+  if(definition.mode==='career') return analyzeCareer(chart);
   const groups=definition.groups.map(group=>{
     const items=group.positions.map(p=>scoreHouse(chart,p.base,p.column));
     const raw=items.length && items.every(v=>v.raw!==null)?items.reduce((s,v)=>s+v.raw,0)/items.length:null;

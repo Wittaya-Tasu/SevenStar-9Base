@@ -3,7 +3,8 @@ import {relationScore,scoreHouse,scoreTopic,levelFor} from '../js/score-engine.j
 import {calculateNineBases} from '../js/chart-engine.js';
 import {TOPIC_DEFINITIONS,resolveTopic,topicHighlights,GROUP_STYLES} from '../js/topic-engine.js';
 import {selectionHighlights,toggleSelection} from '../js/selection-engine.js';
-assert.equal(TOPIC_DEFINITIONS.length,23);
+assert.equal(TOPIC_DEFINITIONS.length,24);
+assert.equal(TOPIC_DEFINITIONS.filter(d=>d.mode==='score').length,23);
 assert.equal(new Set(TOPIC_DEFINITIONS.map(d=>d.category)).size,6);
 assert.equal(relationScore(19,['กำลังตน']).points,45);
 assert.equal(relationScore(12,['สมพล','ศัตรู']).points,40);
@@ -41,7 +42,7 @@ assert.equal(topicHighlights(chart,'').size,0);
 let evaluated=0;
 for(let a=1;a<=7;a++)for(let b=1;b<=7;b++)for(let c=1;c<=7;c++){
  const ch=calculateNineBases(a,b,c);
- for(const {topic} of TOPIC_DEFINITIONS)for(const gender of ['male','female']){
+ for(const {topic} of TOPIC_DEFINITIONS.filter(d=>d.mode==='score'))for(const gender of ['male','female']){
   const r=scoreTopic(ch,topic,gender);
   assert.equal(r.status,'complete',topic);
   assert(r.score>=33 && r.score<=100);

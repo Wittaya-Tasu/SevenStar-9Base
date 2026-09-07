@@ -1,4 +1,5 @@
-import { scoreTopic, levelFor } from "./score-engine.js";
+import { scoreTopic, levelFor, groupSummary, factorSummary } from "./score-engine.js";
+import { topicHighlights, GROUP_STYLES } from "./topic-engine.js";
 import { houseAppearance, isSpecialResult } from "./selection-engine.js";
 import { HOUSE_NAMES } from "./chart-engine.js";
 import { buildRelationColumns } from "./relation-engine.js";
@@ -96,9 +97,12 @@ function drawBaseRow(ctx, chart, baseNumber, y, height, layout, highlights) {
     const key = `${baseNumber}:${column + 1}`;
     const selected = highlights.selected.has(key);
     const related = highlights.related.has(key);
+    const group = GROUP_STYLES[highlights.topic?.get(key)];
+    const groupActive = group && !selected && !related;
     if (baseNumber < 5 || baseNumber > 7 || selected || related) drawCard(ctx, x, y, columnWidth, height,
-      selected ? "#eef4fc" : related ? "#fff9ec" : COLORS.paper,
-      selected ? "#345a92" : related ? "#c69b43" : COLORS.line);
+      selected ? "#eef4fc" : related ? "#fff9ec" : group?.fill || COLORS.paper,
+      selected ? "#345a92" : related ? "#c69b43" : group?.stripe || COLORS.line);
+    if (group) { ctx.fillStyle=group.stripe;ctx.fillRect(x+8,y+height-6,columnWidth-16,4); }
     const centerX = x + columnWidth / 2;
     const house = HOUSE_NAMES[baseNumber]?.[column] || "";
 
@@ -108,8 +112,14 @@ function drawBaseRow(ctx, chart, baseNumber, y, height, layout, highlights) {
     } else if (baseNumber >= 5 && baseNumber <= 7) {
       drawCenteredText(ctx, value, centerX, y + height / 2, '400 25px Sarabun, sans-serif', COLORS.navy);
     } else {
-      drawCenteredText(ctx, house, centerX, y + height * 29 / 104, `${houseAppearance(baseNumber, column + 1).weight} 17px Sarabun, sans-serif`, houseAppearance(baseNumber, column + 1).color);
-      drawCenteredText(ctx, value, centerX, y + height * 70 / 104, '700 32px Sarabun, sans-serif', COLORS.navy);
+      const appearance=houseAppearance(baseNumber,column+1);
+      if (groupActive && appearance.className) {
+        ctx.font=`${appearance.weight} 17px Sarabun, sans-serif`;
+        const labelWidth=ctx.measureText(house).width+12;
+        drawCard(ctx,centerX-labelWidth/2,y+height*29/104-14,labelWidth,28,'#fff0f2',null);
+      }
+      drawCenteredText(ctx, house, centerX, y + height * 29 / 104, `${appearance.weight} 17px Sarabun, sans-serif`, groupActive&&!appearance.className?group.ink:appearance.color);
+      drawCenteredText(ctx, value, centerX, y + height * 70 / 104, '700 32px Sarabun, sans-serif', groupActive?group.ink:COLORS.navy);
     }
   });
 }
@@ -122,12 +132,13 @@ function drawRelationRow(ctx, chart, y, height, layout) {
   });
 }
 
-export async function createChartCanvas({ chart, calendar, personName, topic = "", highlights = { selected: new Set(), related: new Set() } }) {
+export async function createChartCanvas({ chart, calendar, personName, topic = "", gender = "", highlights = { selected: new Set(), related: new Set() } }) {
   if (!chart || !calendar) throw new Error("ยังไม่มีแผนผังสำหรับบันทึก");
   if (document.fonts?.ready) await document.fonts.ready;
 
   const width = 1800;
-  const scoreResult = scoreTopic(chart, topic);
+  const scoreResult = scoreTopic(chart, topic, gender);
+  highlights = {...highlights,topic:topicHighlights(chart,topic,gender)};
   const totalWidth = width + 650;
   const layout = {
     outer: 50,
@@ -139,18 +150,19 @@ export async function createChartCanvas({ chart, calendar, personName, topic = "
   ) / 7;
 
   const rowHeights = { regular: 98.8, compact: 54, relation: 48 };
-  const chartStartY = 215;
+  const chartStartY = 255;
   const chartHeight =
     rowHeights.regular * 6 +
     rowHeights.compact * 3 +
     rowHeights.relation +
     layout.gap * 9;
-  const height = chartStartY + chartHeight + 72;
   const canvas = document.createElement("canvas");
-  canvas.width = totalWidth;
-  canvas.height = height;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("เบราว์เซอร์ไม่รองรับการสร้างภาพ");
+  const panelHeight = Math.max(chartHeight,drawScorePanel(ctx,scoreResult,width,0,600,0,true));
+  const height = chartStartY + panelHeight + 72;
+  canvas.width = totalWidth;
+  canvas.height = height;
 
   ctx.fillStyle = COLORS.paper;
   ctx.fillRect(0, 0, totalWidth, height);
@@ -168,7 +180,7 @@ export async function createChartCanvas({ chart, calendar, personName, topic = "
   ctx.fillStyle = COLORS.muted;
   ctx.font = '400 21px Sarabun, sans-serif';
   ctx.fillText(
-    `เจ้าชะตา: ${owner} · เกิด ${input.day} ${THAI_MONTHS[input.month]} ${input.yearBe} เวลา ${input.time} น.`,
+    `เจ้าชะตา: ${owner} · เพศ: ${{male:'ชาย',female:'หญิง'}[gender]||'ยังไม่ระบุ'} · เกิด ${input.day} ${THAI_MONTHS[input.month]} ${input.yearBe} เวลา ${input.time} น.`,
     layout.outer,
     142,
   );
@@ -178,6 +190,15 @@ export async function createChartCanvas({ chart, calendar, personName, topic = "
     178,
   );
 
+  if (topic) {
+    GROUP_STYLES.forEach((group,index)=>{
+      const x=layout.outer+index*155;
+      drawCard(ctx,x,202,140,32,group.fill,null);
+      drawCenteredText(ctx,group.label,x+70,218,'400 18px Sarabun, sans-serif',group.ink);
+    });
+    ctx.textAlign='left';ctx.fillStyle=COLORS.muted;ctx.font='400 17px Sarabun, sans-serif';
+    ctx.fillText('ฟ้า: ช่องที่คลิก · เหลือง: เชื่อมโยง · แถบล่าง: กลุ่มภพ',540,224);
+  }
   let y = chartStartY;
   for (let baseNumber = 1; baseNumber <= 9; baseNumber += 1) {
     const heightForRow = baseNumber >= 5 && baseNumber <= 7
@@ -191,7 +212,7 @@ export async function createChartCanvas({ chart, calendar, personName, topic = "
     }
   }
 
-  drawScorePanel(ctx, scoreResult, width, chartStartY, 600, chartHeight);
+  drawScorePanel(ctx, scoreResult, width, chartStartY, 600, panelHeight);
 
   ctx.fillStyle = "#98a2b3";
   ctx.font = '400 16px Sarabun, sans-serif';
@@ -201,10 +222,10 @@ export async function createChartCanvas({ chart, calendar, personName, topic = "
 }
 
 
-function drawScorePanel(ctx, result, x, y, width, height) {
+function drawScorePanel(ctx, result, x, y, width, height, measureOnly=false) {
   const complete=result.status==='complete';
   const [,level,color]=complete?levelFor(result.score):[0,'ยังไม่มีผลการประเมิน','#757575'];
-  drawCard(ctx,x,y,width,height,'#ffffff',color);
+  if(!measureOnly) drawCard(ctx,x,y,width,height,'#ffffff',color);
   const fmt=n=>Number(n.toFixed(2)).toString();
   let cursor=y+34;
   const line=(text,size=17,ink=COLORS.ink,bold=false)=>{
@@ -216,31 +237,35 @@ function drawScorePanel(ctx, result, x, y, width, height) {
     while(remaining.length){
       let length=remaining.length;
       while(length>1 && ctx.measureText(remaining.slice(0,length)).width>available) length--;
-      ctx.fillText(remaining.slice(0,length),x+16,cursor);
+      if(!measureOnly) ctx.fillText(remaining.slice(0,length),x+16,cursor);
       cursor+=size+7;remaining=remaining.slice(length);
     }
   };
   line(result.topic||'คะแนนรายหัวข้อ',25,COLORS.ink,true);
   if(!complete){
     line(result.status==='unconfigured'?(result.topic?'ยังไม่ได้กำหนดภพประเมิน':'เลือกหัวข้อเพื่อดูผลการประเมิน'):'ไม่สามารถคำนวณคะแนนได้ครบ');
-    for(const group of result.groups||[])for(const item of group.items)if(item.raw===null)line(`${item.house}: ${item.reason}`);
-    return;
+    for(const reason of result.reasons||[])line(reason);
+    return cursor-y+24;
   }
   line(`${fmt(result.score)}  ·  ${level}`,32,color,true);
-  ctx.fillStyle='#eceff1';ctx.fillRect(x+16,cursor,width-32,10);
-  ctx.fillStyle=color;ctx.fillRect(x+16,cursor,(width-32)*result.score/100,10);
-  ctx.fillStyle='#ffffff';for(let i=1;i<10;i++)ctx.fillRect(x+16+(width-32)*i/10,cursor,1,10);
+  if(!measureOnly){
+    ctx.fillStyle='#eceff1';ctx.fillRect(x+16,cursor,width-32,10);
+    ctx.fillStyle=color;ctx.fillRect(x+16,cursor,(width-32)*result.score/100,10);
+    ctx.fillStyle='#ffffff';for(let i=1;i<10;i++)ctx.fillRect(x+16+(width-32)*i/10,cursor,1,10);
+  }
   cursor+=30;
-  line(`คะแนนก่อนจำกัดค่า ${fmt(result.raw)}`,18);
-  line('รายภพ: คะแนนดิบ · โบนัสไพ่พิเศษ · หักภพเสีย',16);
+  line('คะแนนรวมถ่วงน้ำหนัก / 100 · ไม่มีโบนัส',18);
   for(const group of result.groups){
     cursor+=8;
-    line(`${group.label} ${group.weight*100}% · เฉลี่ย ${fmt(group.raw)}`,20,COLORS.navy,true);
+    line(groupSummary(group,fmt),20,GROUP_STYLES[group.index].stripe,true);
     for(const item of group.items){
-      line(`${item.house} (ฐาน ${item.base}) ดาว ${item.star} / ฐาน4 ${item.sum}: ${fmt(item.raw)} · +${item.specialBonus} · −${item.deduction}`,16);
-      line(`${item.names.join(' + ')||'ไพ่พิเศษ'} · ${item.tier} · ภพเสีย ${item.bad.map(b=>b.house).join(', ')||'ไม่มี'}`,14,COLORS.muted);
+      line(`${item.house} (ฐาน ${item.base}) ดาว ${item.star} / ฐาน4 ${item.sum}: ${fmt(item.raw)} คะแนน`,17,COLORS.ink,true);
+      line(factorSummary(item),16);
+      line(`${item.relation.chosen.join(' / ')} · ${item.tier} · ภพเสียหลัก ${item.major} / รอง ${item.minor}`,16,COLORS.muted);
+      line('ภพเสีย: '+(item.bad.map(b=>`${b.house} ฐาน ${b.base}`).join(', ')||'ไม่มี'),16,COLORS.muted);
     }
   }
+  return cursor-y+24;
 }
 
 function canvasToBlob(canvas, type, quality) {

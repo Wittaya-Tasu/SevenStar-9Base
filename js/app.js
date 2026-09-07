@@ -1,4 +1,5 @@
 import { renderScore } from "./score-view.js";
+import { TOPIC_DEFINITIONS, GROUP_STYLES, topicHighlights } from "./topic-engine.js";
 import { calculateAge, calculateCalendar } from "./calendar-engine.js";
 import { BASE4_NAMES, HOUSE_NAMES, calculateNineBases } from "./chart-engine.js";
 import { buildRelationColumns, getLinkedCellKeys } from "./relation-engine.js";
@@ -35,6 +36,7 @@ function formatThaiDate(iso) {
 function formValues() {
   return {
     name: $("#person-name").value.trim(),
+    gender: $("#person-gender").value,
     day: Number($("#birth-day").value),
     month: Number($("#birth-month").value),
     yearBe: Number($("#birth-year").value),
@@ -108,7 +110,6 @@ function renderRelationRow(chart) {
 }
 
 function renderChart(chart) {
-  renderScore(chart, $("#reading-topic").value);
   clearCellSelection();
   const container = $("#nine-base-chart");
   container.innerHTML = "";
@@ -138,6 +139,31 @@ function renderChart(chart) {
     container.appendChild(row);
     if (baseNumber === 3) {
       container.appendChild(renderRelationRow(chart));
+    }
+  });
+  renderTopic(chart);
+}
+
+function renderTopic(chart = latestChart) {
+  if (!chart) return;
+  const topic = $("#reading-topic").value;
+  const gender = $("#person-gender").value;
+  renderScore(chart, topic, gender);
+  const colors = topicHighlights(chart, topic, gender);
+  $("#topic-legend").hidden = !topic;
+  $$(".base-cell").forEach(cell => {
+    const key = `${cell.dataset.base}:${cell.dataset.column}`;
+    const index = colors.get(key);
+    if (index === undefined) {
+      delete cell.dataset.topicGroup;
+      cell.removeAttribute('title');
+    } else {
+      cell.dataset.topicGroup = String(index);
+      const style = GROUP_STYLES[index];
+      cell.style.setProperty('--group-fill', style.fill);
+      cell.style.setProperty('--group-ink', style.ink);
+      cell.style.setProperty('--group-stripe', style.stripe);
+      cell.title = style.label;
     }
   });
 }
@@ -217,6 +243,7 @@ async function handleChartExport(format, button) {
       personName: formValues().name,
       highlights: selectionHighlights(latestChart, selections),
       topic: $("#reading-topic").value,
+      gender: $("#person-gender").value,
     };
     if (format === "pdf") await exportChartAsPdf(options);
     else await exportChartAsPng(options);
@@ -292,6 +319,7 @@ function escapeHtml(text) {
 
 function loadFavorite(item) {
   $("#person-name").value = item.name;
+  $("#person-gender").value = ['male','female'].includes(item.gender) ? item.gender : '';
   $("#birth-day").value = item.day;
   $("#birth-month").value = item.month;
   $("#birth-year").value = item.yearBe;
@@ -343,4 +371,21 @@ $$('input[name="age-mode"]').forEach((radio) => radio.addEventListener("change",
 
 initializeRange();
 
-$("#reading-topic").addEventListener("change", () => { if(latestChart) renderScore(latestChart, $("#reading-topic").value); });
+for (const category of new Set(TOPIC_DEFINITIONS.map(d=>d.category))) {
+  const group = document.createElement('optgroup');
+  group.label = category;
+  for (const definition of TOPIC_DEFINITIONS.filter(d=>d.category===category)) {
+    const option = document.createElement('option');
+    option.value = definition.topic; option.textContent = definition.topic;
+    group.append(option);
+  }
+  $("#reading-topic").append(group);
+}
+$("#reading-topic").addEventListener("change", () => renderTopic());
+$("#person-gender").addEventListener("change", () => {
+  renderTopic();
+  // Upgrade an existing local favorite in place; old entries retain an unspecified gender.
+  const favorites = readFavorites();
+  const saved = favorites.find(item=>item.id===favoriteId(formValues()));
+  if (saved) { saved.gender = $("#person-gender").value; writeFavorites(favorites); }
+});

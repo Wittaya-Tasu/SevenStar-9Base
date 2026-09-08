@@ -1,7 +1,7 @@
-import { scoreTopic, levelFor, groupSummary, factorSummary } from './score-engine.js';
+import { scoreTopic, levelFor, groupSummary, factorSummary, detailLines, LEVELS } from './score-engine.js';
 import { GROUP_STYLES } from './topic-engine.js';
 import { renderCareerCard } from './career-view.js';
-const number=n=>Number(n.toFixed(2)).toLocaleString('th-TH');
+const number=n=>Math.round(n).toLocaleString('th-TH');
 export function renderScore(chart, topic, gender = '') {
  const panel=document.querySelector('#score-panel');
  panel.replaceChildren();
@@ -12,6 +12,14 @@ export function renderScore(chart, topic, gender = '') {
 function appendScoreCard(panel,result,topic) {
  const card=document.createElement('article');card.className='score-card';panel.append(card);
  const title=document.createElement('h3');title.textContent=topic||'คะแนนรายหัวข้อ';card.append(title);
+ if(result.kind==='qualitative') {
+  card.style.setProperty('--score-color',result.color);
+  const level=document.createElement('p');level.textContent=result.label;level.style.color=result.color;card.append(level);
+  const count=document.createElement('p');count.textContent=`เข้าเงื่อนไข ${result.count} จาก 3 ข้อ`;card.append(count);
+  ['อัตตะและตะนุ','พันธุ','สุภะ'].forEach((name,i)=>{const p=document.createElement('p');p.textContent=`${i+1}. ${name}: ${result.checks[i]?'เข้าเงื่อนไข':'ไม่เข้าเงื่อนไข'}`;card.append(p);});
+  for(const item of result.items){const p=document.createElement('p');p.textContent=`${item.house} (ฐาน ${item.base}) · ดาว ${item.star} · ${item.bad.length?'เชื่อม '+item.bad.map(b=>b.house+' ฐาน '+b.base).join(', '):'ไม่เชื่อมภพเสีย'} · คู่สัมพันธ์ ${item.names.join(' / ')||'ไม่มี'}`;if(item.bad.length)p.className='bad-detail';card.append(p);}
+  return result;
+ }
  if(result.kind==='career') { renderCareerCard(card,result);return result; }
  if(result.status==='unconfigured') {
   const p=document.createElement('p');p.textContent=topic?'ยังไม่ได้กำหนดภพประเมินสำหรับเรื่องนี้':'เลือกหัวข้อเพื่อดูผลการประเมิน';card.append(p);return result;
@@ -19,11 +27,14 @@ function appendScoreCard(panel,result,topic) {
  if(result.status==='complete') {
   const [,label,color]=levelFor(result.score);card.style.setProperty('--score-color',color);
   const value=document.createElement('strong');value.className='score-value';value.textContent=number(result.score);card.append(value);
+  const dots=document.createElement('div');dots.className='score-dots';dots.setAttribute('aria-label',label);
+  [...LEVELS].reverse().forEach((entry,i)=>{const dot=document.createElement('span');dot.style.backgroundColor=entry[1]===label?entry[2]:'#dce0e5';dot.title=entry[1];dots.append(dot);});card.append(dots);
   const level=document.createElement('p');level.textContent=label;card.append(level);
   const bar=document.createElement('div');bar.className='score-bar';bar.setAttribute('role','meter');bar.setAttribute('aria-label',topic);bar.setAttribute('aria-valuemin','0');bar.setAttribute('aria-valuemax','100');bar.setAttribute('aria-valuenow',result.score);
   const fill=document.createElement('span');fill.style.width=`${result.score}%`;bar.append(fill);card.append(bar);
-  const raw=document.createElement('p');raw.textContent='คะแนนรวมถ่วงน้ำหนัก / 100 · ไม่มีโบนัส';card.append(raw);
+
  } else { const p=document.createElement('p');p.textContent=(result.reasons||['ข้อมูลยังไม่ครบ']).join('\n');card.append(p); }
+ if(result.note){const p=document.createElement('p');p.className='bad-detail';p.textContent=result.note;card.append(p);}
  for(const group of result.groups) {
   const section=document.createElement('details');section.open=result.status!=='complete';
   section.style.borderLeft=`4px solid ${GROUP_STYLES[group.index].stripe}`;
@@ -31,8 +42,9 @@ function appendScoreCard(panel,result,topic) {
   for(const item of group.items) {
    const row=document.createElement('div');row.className='score-house';
    const heading=document.createElement('strong');heading.textContent=`${item.house} (ฐาน ${item.base}) · ดาว ${item.star} · ${item.raw===null?'—':number(item.raw)}`;row.append(heading);
-   const text=document.createElement('p');text.textContent=item.raw===null?item.reason:factorSummary(item)+`\nฐาน 4 = ${item.sum} · ระดับ${item.tier}${item.tier!==item.originalTier?' (ลดระดับจากภพเสีย)':''}\nคู่สัมพันธ์: ${item.relation.candidates.map(c=>`${c.name} ${c.points}`).join(' / ')}\nใช้ค่าสูงสุด ${item.relation.points} · ภพเสียหลัก ${item.major} ภพ / รอง ${item.minor} ภพ`;row.append(text);
-   const bad=document.createElement('p');bad.textContent='ภพเสีย: '+(item.bad.map(b=>`${b.house} ฐาน ${b.base}`).join(' • ')||'ไม่มี');row.append(bad);section.append(row);
+   for(const message of item.raw===null?[item.reason]:detailLines(item)) {const p=document.createElement('p');p.textContent=message;row.append(p);}
+   if(item.bad.length) {const bad=document.createElement('p');bad.className='bad-detail';bad.textContent='ภพเสีย: '+item.bad.map(b=>`${b.house} ฐาน ${b.base}`).join(' · ');row.append(bad);}
+   section.append(row);
   }
   card.append(section);
  }

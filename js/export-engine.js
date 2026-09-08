@@ -1,4 +1,4 @@
-import { scoreTopic, levelFor, groupSummary, factorSummary } from "./score-engine.js";
+import { scoreTopic, levelFor, groupSummary, factorSummary, detailLines, LEVELS } from "./score-engine.js";
 import { topicHighlights, GROUP_STYLES } from "./topic-engine.js";
 import { careerStarLabel, careerPositionLabel } from "./career-engine.js";
 import { occupationsFor, BASE_DESCRIPTIONS } from "./occupation-data.js";
@@ -234,9 +234,9 @@ function drawScorePanel(ctx, result, x, y, width, height, measureOnly=false) {
   }
   if(result.kind==='career') return drawCareerPanel(ctx,result,x,y,width,height,measureOnly);
   const complete=result.status==='complete';
-  const [,level,color]=complete?levelFor(result.score):[0,'ยังไม่มีผลการประเมิน','#757575'];
+  const [,level,color]=result.kind==='qualitative'?[0,result.label,result.color]:complete?levelFor(result.score):[0,'ยังไม่มีผลการประเมิน','#757575'];
   if(!measureOnly) drawCard(ctx,x,y,width,height,'#ffffff',color);
-  const fmt=n=>Number(n.toFixed(2)).toString();
+  const fmt=n=>Math.round(n).toString();
   let cursor=y+34;
   const line=(text,size=17,ink=COLORS.ink,bold=false)=>{
     ctx.font=`${bold?700:400} ${size}px Sarabun, sans-serif`;
@@ -257,22 +257,29 @@ function drawScorePanel(ctx, result, x, y, width, height, measureOnly=false) {
     for(const reason of result.reasons||[])line(reason);
     return cursor-y+24;
   }
+  if(result.kind==='qualitative') {
+    line(result.label,28,color,true);line(`เข้าเงื่อนไข ${result.count} จาก 3 ข้อ`);
+    ['อัตตะและตะนุ','พันธุ','สุภะ'].forEach((name,i)=>line(`${i+1}. ${name}: ${result.checks[i]?'เข้าเงื่อนไข':'ไม่เข้าเงื่อนไข'}`));
+    for(const item of result.items) {line(`${item.house} (ฐาน ${item.base}) · ดาว ${item.star}`);line(item.bad.length?'ภพเสีย: '+item.bad.map(b=>b.house+' ฐาน '+b.base).join(', '):'ไม่เชื่อมภพเสีย',16,item.bad.length?'#8b1e2d':COLORS.ink);line('คู่สัมพันธ์: '+(item.names.join(' / ')||'ไม่มี'),16);}
+    return cursor-y+24;
+  }
   line(`${fmt(result.score)}  ·  ${level}`,32,color,true);
+  if(!measureOnly) [...LEVELS].reverse().forEach((entry,i)=>{ctx.beginPath();ctx.arc(x+22+i*22,cursor+5,5,0,Math.PI*2);ctx.fillStyle=entry[1]===level?entry[2]:'#dce0e5';ctx.fill();});
+  cursor+=24;
   if(!measureOnly){
     ctx.fillStyle='#eceff1';ctx.fillRect(x+16,cursor,width-32,10);
     ctx.fillStyle=color;ctx.fillRect(x+16,cursor,(width-32)*result.score/100,10);
     ctx.fillStyle='#ffffff';for(let i=1;i<10;i++)ctx.fillRect(x+16+(width-32)*i/10,cursor,1,10);
   }
   cursor+=30;
-  line('คะแนนรวมถ่วงน้ำหนัก / 100 · ไม่มีโบนัส',18);
+  if(result.note)line(result.note,17,'#8b1e2d');
   for(const group of result.groups){
     cursor+=8;
     line(groupSummary(group,fmt),20,GROUP_STYLES[group.index].stripe,true);
     for(const item of group.items){
       line(`${item.house} (ฐาน ${item.base}) ดาว ${item.star} / ฐาน4 ${item.sum}: ${fmt(item.raw)} คะแนน`,17,COLORS.ink,true);
-      line(factorSummary(item),16);
-      line(`${item.relation.chosen.join(' / ')} · ${item.tier} · ภพเสียหลัก ${item.major} / รอง ${item.minor}`,16,COLORS.muted);
-      line('ภพเสีย: '+(item.bad.map(b=>`${b.house} ฐาน ${b.base}`).join(', ')||'ไม่มี'),16,COLORS.muted);
+      detailLines(item).forEach(message=>line(message,16));
+      if(item.bad.length)line('ภพเสีย: '+item.bad.map(b=>`${b.house} ฐาน ${b.base}`).join(', '),16,'#8b1e2d');
     }
   }
   return cursor-y+24;

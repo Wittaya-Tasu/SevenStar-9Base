@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
-import {relationScore,scoreHouse,scoreTopic,levelFor} from '../js/score-engine.js';
+import {relationScore,scoreHouse,scoreTopic,levelFor,meritCards,detailLines} from '../js/score-engine.js';
 import {calculateNineBases,chartWithGender,houseNamesFor} from '../js/chart-engine.js';
 import {TOPIC_DEFINITIONS,resolveTopic,topicHighlights,GROUP_STYLES} from '../js/topic-engine.js';
 import {selectionHighlights,toggleSelection} from '../js/selection-engine.js';
-assert.equal(TOPIC_DEFINITIONS.length,25);
+assert.equal(TOPIC_DEFINITIONS.length,24);
 assert.equal(TOPIC_DEFINITIONS.filter(d=>d.mode==='score').length,10);
 assert.equal(new Set(TOPIC_DEFINITIONS.map(d=>d.category)).size,6);
 assert.equal(relationScore(19,['กำลังตน']).points,45);
@@ -23,7 +23,7 @@ assert.deepEqual(resolveTopic(chart,'คู่ครอง (ของ ช.)').gr
 assert.deepEqual(resolveTopic(chart,'คู่ครอง (ของ ญ.)').groups[1].positions.map(p=>p.key),['1:7','3:6']);
 assert.equal(scoreTopic(chart,'ฐานะการเงิน').status,'unconfigured');
 assert.equal(resolveTopic(chart,'คุณภาพความรัก').groups[0].positions.length,5);
-assert.equal(TOPIC_DEFINITIONS.filter(d=>d.mode==='pending').length,13);
+assert.equal(TOPIC_DEFINITIONS.filter(d=>d.mode==='pending').length,9);
 for(const t of TOPIC_DEFINITIONS.filter(d=>d.mode==='pending'))assert.equal(scoreTopic(chart,t.topic).status,'incomplete');
 const femaleChart=chartWithGender(chart,'female');
 assert.deepEqual(femaleChart.bases,chart.bases);
@@ -72,7 +72,7 @@ for(const topic of ['ดวง "คนดี"','ดวง "คนรวย"','�
  const canvas=await createChartCanvas({chart,topic,gender:'female',calendar,highlights:selectionHighlights(chart,toggleSelection(chart,new Map(),4,1))});
  assert.equal(canvas.width,2450);
  assert(text.some(v=>v.t===topic));
- assert(text.some(v=>v.t.includes('ไม่มีโบนัส')));
+ assert(!text.some(v=>v.t.includes('ไม่มีโบนัส')));
  assert(text.every(v=>v.y<canvas.height-15),'Export text must fit canvas');
  assert(fills.includes('#eef4fc'));
  assert(fills.includes('#fff9ec'));
@@ -86,5 +86,36 @@ text.length=0;
 await createChartCanvas({chart:femaleChart,topic:'คู่ครอง (ของ ญ.)',calendar});
 const maid=text.find(t=>t.t==='ทาสี');const servant=text.find(t=>t.t==='ทาสา');
 assert(maid&&servant&&maid.x<servant.x);
+for(const topic of ['ดวง "บุญ-บาป"','พลิก "รวย-จน"','การเล่าเรียน']) {
+ text.length=0;
+ const canvas=await createChartCanvas({chart,topic,calendar});
+ assert(text.every(v=>v.y<canvas.height-15));
+ assert(!text.some(v=>v.t.includes('ไม่มีโบนัส')));
+}
 delete globalThis.document;
 console.log('✓ Export score card, gender, selection and topic colors, expandable height');
+
+const goodItem={bad:[],major:0,minor:0,names:['มิตรใหญ่']};
+const badItem={bad:[{}],major:1,minor:0,names:[]};
+assert.equal(meritCards(Array(4).fill(goodItem))[0].label,'ระดับสูงมาก');
+assert.equal(meritCards(Array(4).fill({...goodItem,names:['กำลังตน']}))[0].label,'ระดับสูง');
+assert.equal(meritCards(Array(4).fill(badItem))[1].label,'ระดับรุนแรง');
+assert.equal(meritCards([badItem,badItem,badItem,{...badItem,minor:1}])[1].label,'ระดับแรง');
+assert.equal(meritCards([goodItem,badItem,goodItem,goodItem])[0].count,2);
+assert.equal(meritCards([goodItem,badItem,goodItem,goodItem])[1].count,0);
+assert(!TOPIC_DEFINITIONS.some(t=>t.id===2005));
+for(let a=1;a<=7;a++)for(let b=1;b<=7;b++)for(let c=1;c<=7;c++) {
+ const chart=calculateNineBases(a,b,c);
+ const transition=scoreTopic(chart,'พลิก "รวย-จน"');
+ assert.equal(transition.cards.length,2);
+ assert.equal(transition.cards[0].score,[scoreHouse(chart,1,4),scoreHouse(chart,1,5),scoreHouse(chart,2,4)].reduce((s,i)=>s+i.raw,0)/3);
+ const study=scoreTopic(chart,'การเล่าเรียน');
+ assert.equal(study.cards.length,3);
+ study.cards.forEach((card,i)=>{
+  const star=[5,4,3][i];const source=scoreHouse(chart,1,chart.bases[0].indexOf(star)+1);
+  assert(Math.abs(card.score-(source.raw-source.planet)/77*100)<1e-9);
+  assert.equal(Boolean(card.note),star===5&&source.major>0);
+  for(const item of card.groups[0].items)assert(!detailLines(item).some(line=>line.startsWith('ดาว ')));
+ });
+}
+console.log('✓ Merit AND rules, severity, learning without planet points, transition groups, full export height');

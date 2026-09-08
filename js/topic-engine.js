@@ -24,7 +24,6 @@ export const TOPIC_DEFINITIONS = [
  ['วาสนา',2001,'ดวง "บุญ-บาป"','หน้า 120'],
  ['การงาน',2003,'การเล่าเรียน','หน้า 137'],
  ['การเงิน',2004,'พลิกรวยสู่จน','หน้า 126'],
- ['การเงิน',2005,'พลิกจนสู่รวย','หน้า 128'],
  ['ความรัก',2006,'อายุคู่ครอง','หน้า 142'],
  ['ความรัก',2007,'มากคู่ครอง','หน้า 142'],
  ['ความรัก',2008,'เรื่องของความรัก','รวมหลายข้อของความรัก'],
@@ -36,6 +35,11 @@ export const TOPIC_DEFINITIONS = [
  ['ความรัก',2014,'แต่งกับ "หม้าย"','ยังไม่ระบุรายละเอียด'],
  ].map(([category,id,topic,sourceNote])=>({category,id,topic,sourceNote,mode:'pending',groups:[]})),
 ];
+for(const t of TOPIC_DEFINITIONS) {
+ if(t.id===2001) Object.assign(t,{mode:'merit',groups:[['1:1','2:1','2:4','3:2']]});
+ if(t.id===2004) Object.assign(t,{topic:'พลิก "รวย-จน"',mode:'transition',groups:[['1:4','1:5','2:4','1:3','1:6','2:2','3:4','3:2']]});
+ if(t.id===2003) Object.assign(t,{mode:'study',groups:[[{stars:[5,4,3],bases:[1,2,3,8,9]}]]});
+}
 export const GROUP_STYLES = [
   {label:'ภพหลัก', fill:'#183e75', ink:'#ffffff', stripe:'#183e75'},
   {label:'ภพรอง', fill:'#237647', ink:'#ffffff', stripe:'#237647'},

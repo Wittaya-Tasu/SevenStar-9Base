@@ -95,7 +95,14 @@ elements=flatten(panel);
 assert.equal(elements.filter(e=>e.className==='score-card').length,2);
 assert.equal(elements.filter(e=>e.className==='score-value').length,2);
 renderScore(chart,'ดวง "บุญ-บาป"');
-assert(flatten(panel).some(e=>e.textContent.includes('รอเพิ่มเงื่อนไข')));
+assert.equal(flatten(panel).filter(e=>e.className==='score-card').length,2);
+renderScore(chart,'การเล่าเรียน');
+elements=flatten(panel);
+assert.equal(elements.filter(e=>e.className==='score-card').length,3);
+assert.equal(elements.filter(e=>e.className==='score-dots').length,3);
+for(const dots of elements.filter(e=>e.className==='score-dots')) {assert.equal(dots.children.length,5);assert.equal(dots.children.filter(d=>d.style.backgroundColor!=='#dce0e5').length,1);}
+for(const value of elements.filter(e=>e.className==='score-value')) assert(!value.textContent.includes('.'));
+assert(!elements.some(e=>e.textContent.includes('ไม่มีโบนัส')));
 const texts=[],fills=[];
 const ctx=new Proxy({measureText:t=>({width:Array.from(t).length*9}),fillText:(t,x,y)=>texts.push({t:String(t),x,y}),fill:()=>fills.push(ctx.fillStyle),save(){},restore(){}},{get:(t,k)=>k in t?t[k]:()=>{}});
 globalThis.document={fonts:{ready:Promise.resolve()},createElement:()=>({getContext:()=>ctx})};

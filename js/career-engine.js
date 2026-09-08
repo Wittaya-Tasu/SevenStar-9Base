@@ -1,4 +1,4 @@
-import { HOUSE_NAMES } from './chart-engine.js';
+import { HOUSE_NAMES, houseNamesFor, chartWithGender } from './chart-engine.js';
 import { getRelations, getBadNumbers, relationConstants } from './relation-engine.js';
 import { CAREER_TOPIC, resolveTopic } from './topic-engine.js';
 
@@ -41,6 +41,8 @@ export function analyzeCareer(chart) {
   // Same-rank stars sort numerically only for stable display, not additional suitability.
   const stars=[...byStar.values()].sort((a,b)=>a.rank-b.rank||a.star-b.star);
   const bands=CAREER_BANDS.map(band=>({...band,stars:stars.filter(s=>s.rank===band.rank)})).filter(b=>b.stars.length);
+  const topRanks=new Set(bands.slice(0,2).map(b=>b.rank));
+  for(const item of stars) item.extraOccupationBase=topRanks.has(item.rank)&&[9,12].includes(item.sum)?item.sum:null;
   return {topic:CAREER_TOPIC,kind:'career',status:'complete',groups:definition.groups,stars,bands};
 }
 

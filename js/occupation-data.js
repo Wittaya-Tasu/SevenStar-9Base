@@ -58,4 +58,20 @@ export const OCCUPATIONS = {
 
 // Retained from source for review, not silently converted into legitimate direct selling.
 export const OCCUPATION_REVIEW = [{star:4,label:'แชร์ลูกโซ่',sourceItem:39,status:'รอทบทวน ไม่แสดงในรายการแนะนำ'}];
-export function occupationsFor(star) { return OCCUPATIONS[Number(star)] || []; }
+// Additional source images supplied after V1.4. Existing labels remain; only new scopes are added.
+const ADDITIONS = {
+  1:['เจ้าของกิจการขนาดใหญ่','เพชรพลอย / อัญมณี','ธุรกิจพลังงาน'],
+  2:['ข้าราชการ','นายแบบ / นางแบบ','ธุรกิจยานพาหนะ','เสื้อผ้า / อาหาร','กิจการต่างประเทศ'],
+  3:['ช่างฝีมือ / ช่างเทคนิค','เครื่องมือเหล็กและของมีคม','งานต่อสู้ / เสี่ยงภัย / ผจญภัย','งานประหารตามหน้าที่'],
+  4:['นักพูด / นักแปลภาษา','ธุรกิจตลาดหุ้น','งานติดต่อเจรจา / สื่อสารมวลชน','ธุรกิจคอมพิวเตอร์','ธุรกิจอาหาร'],
+  5:['นักวิชาการ / หนังสือวิชาการ','งานยุติธรรม','งานบุญกุศล'],
+  6:['นักออกแบบ','นักบัญชี / พนักงานการเงิน','บริการทางเพศ'],
+  7:['วิศวกร','นายหน้าที่ดิน','หาบเร่ / แผงลอย','ของโบราณ / ของชำรุด / เศษวัสดุ'],
+};
+for(const [star,labels] of Object.entries(ADDITIONS)) OCCUPATIONS[star]=[...new Set([...OCCUPATIONS[star],...labels])];
+export const BASE_OCCUPATIONS = {
+  9:['นักบวช / พระภิกษุ','โหราจารย์ / หมอดู','ผู้ประกอบพิธีไสยศาสตร์','กิจการด้านจิตวิญญาณ','สังฆภัณฑ์ / ของศักดิ์สิทธิ์','ของเก่า / ของโบราณ','กิจการต่างประเทศ'],
+  12:['ผู้คุมนักโทษ / คุมประพฤติ','นักการพนัน / กิจการบ่อนพนัน','กิจการสิ่งมึนเมาและสิ่งเสพติด','บริการทางเพศ','งานจารกรรม','กิจการต่างประเทศ'],
+};
+export const BASE_DESCRIPTIONS = {12:'คำในต้นฉบับที่เป็นบทบาทหรือพฤติกรรม: ผู้ทรงอิทธิพล นักเลง การก่ออาชญากรรม ค้าของผิดกฎหมาย หลอกลวงต้มตุ๋น'};
+export function occupationsFor(star) { return OCCUPATIONS[Number(star)] || BASE_OCCUPATIONS[Number(star)] || []; }

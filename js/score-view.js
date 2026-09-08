@@ -6,6 +6,10 @@ export function renderScore(chart, topic, gender = '') {
  const panel=document.querySelector('#score-panel');
  panel.replaceChildren();
  const result=scoreTopic(chart,topic,gender);
+ if(result.kind==='composite') {for(const child of result.cards) appendScoreCard(panel,child,child.topic);return result;}
+ appendScoreCard(panel,result,topic);return result;
+}
+function appendScoreCard(panel,result,topic) {
  const card=document.createElement('article');card.className='score-card';panel.append(card);
  const title=document.createElement('h3');title.textContent=topic||'คะแนนรายหัวข้อ';card.append(title);
  if(result.kind==='career') { renderCareerCard(card,result);return result; }

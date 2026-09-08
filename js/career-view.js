@@ -1,5 +1,5 @@
 import { careerStarLabel, careerPositionLabel, CAREER_BANDS } from './career-engine.js';
-import { occupationsFor } from './occupation-data.js';
+import { occupationsFor, BASE_DESCRIPTIONS } from './occupation-data.js';
 
 export function renderCareerCard(card,result) {
   card.classList.add('career-card');
@@ -24,11 +24,18 @@ export function renderCareerCard(card,result) {
       const closed=document.createElement('span');closed.className='career-show-label';closed.textContent='แสดงอาชีพ';toggle.append(closed);
       const opened=document.createElement('span');opened.className='career-hide-label';opened.textContent='ซ่อนอาชีพ';toggle.append(opened);
       disclosure.append(toggle);
-      const list=document.createElement('ul');list.className='occupation-list';
+      const list=document.createElement('p');list.className='occupation-list';
       for(const label of occupationsFor(item.star)) {
-        const li=document.createElement('li');li.textContent=label;list.append(li);
+        const li=document.createElement('span');li.textContent=label+'　 ';list.append(li);
       }
-      disclosure.append(list);numbers.append(disclosure);
+      disclosure.append(list);
+      if(item.extraOccupationBase) {
+        const heading=document.createElement('strong');heading.textContent=`อาชีพเสริมจากฐาน 4 เลข ${item.extraOccupationBase}`;disclosure.append(heading);
+        const extra=document.createElement('p');extra.className='occupation-list';
+        extra.textContent=occupationsFor(item.extraOccupationBase).join('　 ');disclosure.append(extra);
+        if(BASE_DESCRIPTIONS[item.extraOccupationBase]) {const description=document.createElement('p');description.className='career-source-note';description.textContent=BASE_DESCRIPTIONS[item.extraOccupationBase];disclosure.append(description);}
+      }
+      numbers.append(disclosure);
     }
     section.append(numbers);
     const explanation=document.createElement('p');explanation.textContent=band.description;section.append(explanation);

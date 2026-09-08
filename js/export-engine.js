@@ -1,9 +1,9 @@
 import { scoreTopic, levelFor, groupSummary, factorSummary } from "./score-engine.js";
 import { topicHighlights, GROUP_STYLES } from "./topic-engine.js";
 import { careerStarLabel, careerPositionLabel } from "./career-engine.js";
-import { occupationsFor } from "./occupation-data.js";
+import { occupationsFor, BASE_DESCRIPTIONS } from "./occupation-data.js";
 import { houseAppearance, isSpecialResult } from "./selection-engine.js";
-import { HOUSE_NAMES } from "./chart-engine.js";
+import { HOUSE_NAMES, houseNamesFor, chartWithGender } from "./chart-engine.js";
 import { buildRelationColumns } from "./relation-engine.js";
 
 const THAI_MONTHS = [
@@ -106,7 +106,7 @@ function drawBaseRow(ctx, chart, baseNumber, y, height, layout, highlights) {
       selected ? "#345a92" : related ? "#c69b43" : group?.stripe || COLORS.line);
     if (group) { ctx.fillStyle=group.stripe;ctx.fillRect(x+8,y+height-6,columnWidth-16,4); }
     const centerX = x + columnWidth / 2;
-    const house = HOUSE_NAMES[baseNumber]?.[column] || "";
+    const house = houseNamesFor(chart)[baseNumber]?.[column] || "";
 
     if (baseNumber === 4) {
       drawCenteredText(ctx, value, centerX, y + height * 38 / 104, '700 32px Sarabun, sans-serif', COLORS.navy);
@@ -134,11 +134,12 @@ function drawRelationRow(ctx, chart, y, height, layout) {
   });
 }
 
-export async function createChartCanvas({ chart, calendar, personName, topic = "", gender = "", expandedCareerStars = [], highlights = { selected: new Set(), related: new Set() } }) {
+export async function createChartCanvas({ chart, calendar, personName, topic = "", gender = chart.gender || "", expandedCareerStars = [], highlights = { selected: new Set(), related: new Set() } }) {
   if (!chart || !calendar) throw new Error("ยังไม่มีแผนผังสำหรับบันทึก");
   if (document.fonts?.ready) await document.fonts.ready;
 
   const width = 1800;
+  chart=chartWithGender(chart,gender);
   const scoreResult = scoreTopic(chart, topic, gender);
   if (scoreResult.kind==='career') scoreResult.expandedCareerStars = new Set(expandedCareerStars.map(Number));
   highlights = {...highlights,topic:topicHighlights(chart,topic,gender)};
@@ -226,6 +227,11 @@ export async function createChartCanvas({ chart, calendar, personName, topic = "
 
 
 function drawScorePanel(ctx, result, x, y, width, height, measureOnly=false) {
+  if(result.kind==='composite') {
+    let offset=0;
+    for(const child of result.cards) {const h=drawScorePanel(ctx,child,x,y+offset,width,0,true);if(!measureOnly)drawScorePanel(ctx,child,x,y+offset,width,h,false);offset+=h+24;}
+    return offset;
+  }
   if(result.kind==='career') return drawCareerPanel(ctx,result,x,y,width,height,measureOnly);
   const complete=result.status==='complete';
   const [,level,color]=complete?levelFor(result.score):[0,'ยังไม่มีผลการประเมิน','#757575'];
@@ -303,7 +309,12 @@ function drawCareerPanel(ctx,result,x,y,width,height,measureOnly) {
       }
       cursor+=62;
       if(result.expandedCareerStars?.has(item.star)) {
-        cursor+=drawOccupationColumns(ctx,occupationsFor(item.star),left,cursor,width-32,measureOnly);
+        cursor+=drawOccupationFlow(ctx,occupationsFor(item.star),left,cursor,width-32,measureOnly);
+        if(item.extraOccupationBase) {
+          line(`อาชีพเสริมจากฐาน 4 เลข ${item.extraOccupationBase}`,17,COLORS.ink,true);
+          cursor+=drawOccupationFlow(ctx,occupationsFor(item.extraOccupationBase),left,cursor,width-32,measureOnly);
+          if(BASE_DESCRIPTIONS[item.extraOccupationBase]) line(BASE_DESCRIPTIONS[item.extraOccupationBase],16,COLORS.muted);
+        }
         cursor+=10;
       }
     }
@@ -321,8 +332,8 @@ function drawCareerPanel(ctx,result,x,y,width,height,measureOnly) {
   return cursor-y+24;
 }
 
-function drawOccupationColumns(ctx,labels,x,y,width,measureOnly) {
-  const gap=24, columnWidth=(width-gap)/2, fontSize=17, lineHeight=26;
+function drawOccupationFlow(ctx,labels,x,y,width,measureOnly) {
+  const columnWidth=width, fontSize=17, lineHeight=29;
   ctx.font=`400 ${fontSize}px Sarabun, sans-serif`;
   const wrap=text=>{
     const segments=typeof Intl.Segmenter==='function'
@@ -337,16 +348,9 @@ function drawOccupationColumns(ctx,labels,x,y,width,measureOnly) {
     return lines;
   };
   let cursor=y;
-  for(let i=0;i<labels.length;i+=2) {
-    const row=labels.slice(i,i+2).map(wrap);
-    row.forEach((lines,column)=>{
-      if(measureOnly)return;
-      ctx.textAlign='left';ctx.textBaseline='top';ctx.fillStyle=COLORS.ink;
-      ctx.fillText('•',x+column*(columnWidth+gap),cursor);
-      lines.forEach((text,j)=>ctx.fillText(text,x+column*(columnWidth+gap)+14,cursor+j*lineHeight));
-    });
-    cursor+=Math.max(...row.map(lines=>lines.length))*lineHeight+8;
-  }
+  const lines=wrap(labels.join('　 '));
+  if(!measureOnly) {ctx.textAlign='left';ctx.textBaseline='top';ctx.fillStyle=COLORS.ink;lines.forEach((text,j)=>ctx.fillText(text,x,cursor+j*lineHeight));}
+  cursor+=lines.length*lineHeight+8;
   return cursor-y;
 }
 

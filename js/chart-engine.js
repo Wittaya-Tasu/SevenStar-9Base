@@ -51,3 +51,9 @@ export function calculateNineBases(daySeed, monthSeed, zodiacSeed) {
     base4Names: base4.map((value) => BASE4_NAMES[value]),
   };
 }
+
+// Numeric columns never move; only the two named base-3 houses depend on gender.
+export function houseNamesFor(chart) {
+ return {...HOUSE_NAMES,3:chart.gender==='female'?[...HOUSE_NAMES[3].slice(0,5),'ทาสี','ทาสา']:HOUSE_NAMES[3]};
+}
+export function chartWithGender(chart,gender=chart.gender||'') { return {...chart,gender}; }

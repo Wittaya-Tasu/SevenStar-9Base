@@ -1,7 +1,7 @@
 import { renderScore } from "./score-view.js";
 import { TOPIC_DEFINITIONS, GROUP_STYLES, topicHighlights } from "./topic-engine.js";
 import { calculateAge, calculateCalendar } from "./calendar-engine.js";
-import { BASE4_NAMES, HOUSE_NAMES, calculateNineBases } from "./chart-engine.js";
+import { BASE4_NAMES, HOUSE_NAMES, houseNamesFor, chartWithGender, calculateNineBases } from "./chart-engine.js";
 import { buildRelationColumns, getLinkedCellKeys } from "./relation-engine.js";
 import { toggleSelection, selectionHighlights, houseAppearance, isSpecialResult } from "./selection-engine.js";
 import { exportChartAsPdf, exportChartAsPng } from "./export-engine.js";
@@ -85,7 +85,7 @@ function renderCalendarSummary(calendar, age, mode) {
 }
 
 function cellLabel(baseNumber, column, value, chart) {
-  const house = HOUSE_NAMES[baseNumber]?.[column];
+  const house = houseNamesFor(chart)[baseNumber]?.[column];
   if (baseNumber === 4) return `ฐาน 4 ช่อง ${column + 1} ผลรวม ${value} ${BASE4_NAMES[value]}`;
   return `ฐาน ${baseNumber} ช่อง ${column + 1}${house ? ` ตำแหน่ง${house}` : ""} เลข ${value}`;
 }
@@ -125,7 +125,7 @@ function renderChart(chart) {
       button.dataset.base = String(baseNumber);
       button.dataset.column = String(column + 1);
       button.dataset.value = String(value);
-      const house = HOUSE_NAMES[baseNumber]?.[column] || "";
+      const house = houseNamesFor(chart)[baseNumber]?.[column] || "";
       if (baseNumber === 4) {
         button.innerHTML = `<span class="number">${value}</span><span class="result-name ${isSpecialResult(value) ? "" : "plain-result"}">${chart.base4Names[column]}</span>`;
       } else {
@@ -202,9 +202,10 @@ async function processForm(event) {
   clearError();
   try {
     const values = formValues();
+    if(!['male','female'].includes(values.gender)) throw new Error('กรุณาเลือกเพศเจ้าชะตา');
     const calendar = await calculateCalendar(values);
     const age = calculateAgeFromForm(values);
-    const chart = calculateNineBases(calendar.seeds.day, calendar.seeds.month, calendar.seeds.zodiac);
+    const chart = chartWithGender(calculateNineBases(calendar.seeds.day, calendar.seeds.month, calendar.seeds.zodiac),values.gender);
     latestCalendar = calendar;
     latestChart = chart;
     renderCalendarSummary(calendar, age, values.ageMode);
@@ -225,7 +226,7 @@ function applyOverride() {
     month: Number($("#override-month").value),
     zodiac: Number($("#override-zodiac").value),
   };
-  latestChart = calculateNineBases(seeds.day, seeds.month, seeds.zodiac);
+  latestChart = chartWithGender(calculateNineBases(seeds.day, seeds.month, seeds.zodiac),$("#person-gender").value);
   renderChart(latestChart);
   $("#seed-summary").textContent = `${seeds.day} · ${seeds.month} · ${seeds.zodiac}`;
   $("#seed-summary").nextElementSibling.textContent = "ค่าที่ผู้ใช้ยืนยัน · ใช้เฉพาะรอบนี้";
@@ -384,7 +385,7 @@ for (const category of new Set(TOPIC_DEFINITIONS.map(d=>d.category))) {
 }
 $("#reading-topic").addEventListener("change", () => renderTopic());
 $("#person-gender").addEventListener("change", () => {
-  renderTopic();
+  if(latestChart) {latestChart=chartWithGender(latestChart,$("#person-gender").value);renderChart(latestChart);}
   // Upgrade an existing local favorite in place; old entries retain an unspecified gender.
   const favorites = readFavorites();
   const saved = favorites.find(item=>item.id===favoriteId(formValues()));

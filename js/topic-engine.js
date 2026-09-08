@@ -1,40 +1,48 @@
-import { HOUSE_NAMES } from './chart-engine.js';
+import { HOUSE_NAMES, houseNamesFor, chartWithGender } from './chart-engine.js';
 // Source: หัวข้อ และ ภพ.xlsx, sheet หัวข้อ, rows 2–24; positions are base:column.
 const stars = (...values) => ({ stars: values });
 const spouse = { byGender: { male: '3:7', female: '3:6' } };
 export const CAREER_TOPIC = 'อาชีพที่เหมาะสม';
+const configured = [
+ ['ตัวเจ้าชะตา',1001,'ดวง "คนดี"',['1:1','2:1','2:4','3:2'],[stars(5)]],
+ ['การเงิน',1002,'ดวง "คนรวย"',['1:3','1:6','2:2','3:4'],['1:1','2:1'],[stars(6)]],
+ ['การเงิน',1005,'ร่ำรวย สุขสบาย',['1:3','1:6','2:2','3:4']],
+ ['การเงิน',1006,'ร่ำรวย สุขสบาย วงค์ดี',['1:3','1:6','2:2','3:4','3:2'],['1:4','1:5','2:4']],
+ ['การเงิน',1007,'สร้างฐานะง่าย',['1:3','1:6','2:2','3:4','3:2','1:4','1:5','2:4'],['1:1','2:1']],
+ ['ความรัก',1008,'คุณภาพความรัก',[{stars:[6],bases:[1,2,3,8,9]}]],
+ ['ความรัก',1009,'คู่ครอง (ของ ช.)',['2:7'],['1:7','3:7'],['9:7']],
+ ['ความรัก',1010,'คู่ครอง (ของ ญ.)',['2:7'],['1:7','3:6'],['9:7']],
+ ['ชื่อเสียง',1003,'ดวง "คนดัง"',['1:1','2:1'],['3:2']],
+ ['ตัวเจ้าชะตา',null,'ความพอดี',['1:7']],
+].map(([category,id,topic,...groups])=>({category,id,topic,groups,mode:'score'}));
 export const TOPIC_DEFINITIONS = [
-  ['เจ้าชะตา','วาสนา',['1:1','2:1'],['8:1','9:1'],[stars(6,2)]],
-  ['เจ้าชะตา','ความดี',['1:1','2:1'],['2:4','3:2'],[stars(5)]],
-  ['เจ้าชะตา','ชื่อเสียง',['3:2'],['8:3'],[stars(1)]],
-  ['เจ้าชะตา','ความพอดี',['1:7']],
-  ['การงาน','การงาน',['3:3'],['1:1','2:1','8:7'],[stars(3)]],
-  ['การงาน','การเรียน',['3:3'],['1:1','2:1','8:7'],[stars(3,4,5)]],
-  ['การงาน','หุ้นส่วน',['2:7'],['9:7']],
-  ['การงาน',CAREER_TOPIC,['1:1','2:1','3:3'],['1:3','2:2','1:6','3:4','3:2']],
-  ['ฐานะการเงิน','ฐานะการเงิน',['1:3','2:2'],['1:6','3:4','3:2','9:4'],[stars(6)]],
-  ['ฐานะการเงิน','สมบัติฯ',['1:6'],['8:4']],
-  ['ฐานะการเงิน','ยานพาหนะ',['2:4'],['9:6']],
-  ['ฐานะการเงิน','บ้านที่อยู่',['2:4'],['9:5']],
-  ['ความรัก','ความรัก',[stars(6)]],
-  ['ความรัก','คู่ครอง',['2:7'],['9:7','1:7',spouse]],
-  ['สังคม','ญาติพี่น้อง',['2:4'],['9:3']],
-  ['สังคม','ทายาท',['2:5'],['3:6','3:7']],
-  ['สังคม','บริวารชาย',['3:6'],['8:2']],
-  ['สังคม','บริวารหญิง',['3:7'],['8:2']],
-  ['สังคม','สังคม',['2:3'],['9:2']],
-  ['สังคม','ผู้สนับสนุน ชาย',['1:4'],['8:7']],
-  ['สังคม','ผู้สนับสนุน หญิง',['1:5'],['8:7']],
-  ['สุขภาพ','สุขภาพ',['3:5'],['8:6']],
-  ['สุขภาพ','ป่วยหนัก',['3:1'],['8:6']],
-  ['สุขภาพ','ศัตรู-หนี้สิน',['2:6'],['8:5']],
-].map(([category,topic,...groups]) => ({category,topic,groups,mode:topic===CAREER_TOPIC?'career':'score'}));
+ configured[0],
+ {category:'วาสนา',id:1004,topic:'ความดี-ความรวย',mode:'composite',children:[1001,1002],groups:[]},
+ ...configured.slice(1),
+ {category:'การงาน',id:2002,topic:CAREER_TOPIC,mode:'career',groups:[['1:1','2:1','3:3'],['1:3','2:2','1:6','3:4','3:2']]},
+ ...[
+ ['วาสนา',2001,'ดวง "บุญ-บาป"','หน้า 120'],
+ ['การงาน',2003,'การเล่าเรียน','หน้า 137'],
+ ['การเงิน',2004,'พลิกรวยสู่จน','หน้า 126'],
+ ['การเงิน',2005,'พลิกจนสู่รวย','หน้า 128'],
+ ['ความรัก',2006,'อายุคู่ครอง','หน้า 142'],
+ ['ความรัก',2007,'มากคู่ครอง','หน้า 142'],
+ ['ความรัก',2008,'เรื่องของความรัก','รวมหลายข้อของความรัก'],
+ ['ความรัก',2009,'ข้อสังเกตเรื่อง "รัก"','หน้า 145'],
+ ['ความรัก',2010,'แต่ช้า-ไม่แต่ง','หน้า 149'],
+ ['ความรัก',2011,'ไม่แต่ง-บวช','หน้า 151'],
+ ['ความรัก',2012,'ดวง "หม้าย-เลิก"','หน้า 154'],
+ ['ความรัก',2013,'ดวง "หม้าย-จาก"','หน้า 154'],
+ ['ความรัก',2014,'แต่งกับ "หม้าย"','ยังไม่ระบุรายละเอียด'],
+ ].map(([category,id,topic,sourceNote])=>({category,id,topic,sourceNote,mode:'pending',groups:[]})),
+];
 export const GROUP_STYLES = [
   {label:'ภพหลัก', fill:'#183e75', ink:'#ffffff', stripe:'#183e75'},
   {label:'ภพรอง', fill:'#237647', ink:'#ffffff', stripe:'#237647'},
   {label:'ภพเสริม', fill:'#d9efc9', ink:'#20371c', stripe:'#7bae58'},
 ];
-export function resolveTopic(chart, topic, gender = '') {
+export function resolveTopic(chart, topic, gender = chart.gender || '') {
+  chart=chartWithGender(chart,gender);
   const definition = TOPIC_DEFINITIONS.find(d => d.topic === topic);
   if (!definition) return null;
   const missing = [];
@@ -42,9 +50,13 @@ export function resolveTopic(chart, topic, gender = '') {
   const groups = definition.groups.map((selectors,index) => {
     const keys = new Set();
     for (const selector of selectors) {
-      if (typeof selector === 'string') keys.add(selector);
+      if (typeof selector === 'string') {
+        const [base,column]=selector.split(':').map(Number);
+        const house=HOUSE_NAMES[base][column-1];
+        keys.add(`${base}:${houseNamesFor(chart)[base].indexOf(house)+1}`);
+      }
       else if (selector.stars) {
-        for (let b=1;b<=3;b++) chart.bases[b-1].forEach((star,c) => {
+        for (const b of selector.bases || [1,2,3]) chart.bases[b-1].forEach((star,c) => {
           if (selector.stars.includes(star)) keys.add(`${b}:${c+1}`);
         });
       } else if (selector.byGender) {
@@ -54,17 +66,24 @@ export function resolveTopic(chart, topic, gender = '') {
     }
     const positions = [...keys].map(key => {
       const [base,column] = key.split(':').map(Number);
-      const house = HOUSE_NAMES[base]?.[column-1];
+      const house = houseNamesFor(chart)[base]?.[column-1];
       if (!house) throw new Error(`ไม่พบตำแหน่ง ${key}`);
       return {key,base,column,house};
     });
     return {index,label:GROUP_STYLES[index].label,weight:weights[index],positions};
   });
-  return {topic,category:definition.category,mode:definition.mode,groups,missing};
+  return {...definition,groups,missing};
 }
 // Repeated positions score in every group; color priority is main, secondary, supplementary.
-export function topicHighlights(chart, topic, gender = '') {
+export function topicHighlights(chart, topic, gender = chart.gender || '') {
   const colors = new Map();
+  const definition=TOPIC_DEFINITIONS.find(d=>d.topic===topic);
+  if(definition?.mode==='composite') {
+    for(const id of definition.children) for(const [key,index] of topicHighlights(chart,TOPIC_DEFINITIONS.find(d=>d.id===id).topic,gender)) {
+      if(!colors.has(key)||index<colors.get(key)) colors.set(key,index);
+    }
+    return colors;
+  }
   for (const group of resolveTopic(chart,topic,gender)?.groups || []) {
     for (const position of group.positions) if (!colors.has(position.key)) colors.set(position.key,group.index);
   }

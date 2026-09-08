@@ -247,6 +247,5 @@ footer { display: flex; justify-content: space-between; gap: 12px; padding: 20px
 .career-occupations .career-hide-label { display:none; }
 .career-occupations[open] .career-hide-label { display:inline; }
 .career-occupations[open] .career-show-label { display:none; }
-.occupation-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px 16px; padding:10px 0 10px 16px; margin:0; font-size:.875rem; line-height:1.55; text-align:left; }
-.occupation-list li { overflow-wrap:anywhere; padding-right:3px; }
-@media(max-width:600px) { .occupation-list { grid-template-columns:1fr; } }
+.occupation-list { display:block; padding:10px 0; margin:0; font-size:.875rem; line-height:1.9; text-align:left; overflow-wrap:anywhere; }
+.career-source-note { font-size:.875rem; line-height:1.8; color:var(--muted); }

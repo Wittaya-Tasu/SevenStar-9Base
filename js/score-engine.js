@@ -1,6 +1,6 @@
-import { HOUSE_NAMES } from './chart-engine.js';
+import { HOUSE_NAMES, houseNamesFor, chartWithGender } from './chart-engine.js';
 import { getBadNumbers, getRelations, relationConstants } from './relation-engine.js';
-import { resolveTopic } from './topic-engine.js';
+import { resolveTopic, TOPIC_DEFINITIONS } from './topic-engine.js';
 import { analyzeCareer } from './career-engine.js';
 
 export const LEVELS = [[80,'ดีมาก','#a67c00'],[60,'ดี','#196f45'],[50,'ปานกลาง','#000000'],[40,'แย่','#c95560'],[30,'แย่มาก','#8b1e2d']];
@@ -19,7 +19,7 @@ export function relationScore(sum, names) {
   return {points,candidates,chosen:candidates.filter(c=>c.points===points).map(c=>c.name)};
 }
 export function scoreHouse(chart, base, column) {
-  const house = HOUSE_NAMES[base]?.[column-1];
+  const house = houseNamesFor(chart)[base]?.[column-1];
   if (!house) throw new Error('ต้องประเมินตำแหน่งภพที่มีชื่อ');
   const star=chart.bases[base-1][column-1];
   const pairColumn=chart.bases[2].indexOf(star);
@@ -43,9 +43,12 @@ export function scoreHouse(chart, base, column) {
   return {base,column,house,star,sum,pairColumn:pairColumn+1,tier,originalTier,bad,major,minor,names,relation,planet,basePoints,majorPoints,minorPoints,raw,
     reason:raw===null?'ยังไม่กำหนดความสัมพันธ์คู่ '+star+'–'+sum:null};
 }
-export function scoreTopic(chart, topic, gender = '') {
+export function scoreTopic(chart, topic, gender = chart.gender || '') {
+  chart=chartWithGender(chart,gender);
   const definition=resolveTopic(chart,topic,gender);
   if(!definition) return {topic,status:'unconfigured'};
+  if(definition.mode==='pending') return {topic,status:'incomplete',groups:[],reasons:['รอเพิ่มเงื่อนไข: '+definition.sourceNote]};
+  if(definition.mode==='composite') return {topic,kind:'composite',status:'complete',groups:[],cards:definition.children.map(id=>scoreTopic(chart,TOPIC_DEFINITIONS.find(d=>d.id===id).topic,gender))};
   if(definition.mode==='career') return analyzeCareer(chart);
   const groups=definition.groups.map(group=>{
     const items=group.positions.map(p=>scoreHouse(chart,p.base,p.column));

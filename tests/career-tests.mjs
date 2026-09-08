@@ -66,7 +66,7 @@ const flatten=e=>[e,...e.children.flatMap(flatten)];
 renderScore(chart,CAREER_TOPIC);
 let elements=flatten(panel);
 assert.deepEqual(Object.keys(OCCUPATIONS),['1','2','3','4','5','6','7']);
-assert.deepEqual(Object.values(OCCUPATIONS).map(items=>items.length),[8,19,22,30,20,27,30]);
+assert.deepEqual(Object.values(OCCUPATIONS).map(items=>items.length),[11,24,26,35,23,30,34]);
 for(const labels of Object.values(OCCUPATIONS)) {
  assert(labels.every(label=>typeof label==='string'&&label.trim()));
  assert.equal(new Set(labels).size,labels.length);
@@ -79,17 +79,23 @@ for(const section of occupationSections) {
  assert.equal(section.tag,'details');
  assert.notEqual(section.open,true);
  assert.equal(section.children[0].tag,'summary');
- assert.deepEqual(section.children[1].children.map(li=>li.textContent),occupationsFor(Number(section.attributes['data-career-star'])));
+ assert.deepEqual(section.children[1].children.map(li=>li.textContent.trim()),occupationsFor(Number(section.attributes['data-career-star'])));
 }
 assert.equal(elements.filter(e=>e.className.startsWith('career-star ')).length,6);
 assert.equal(elements.filter(e=>e.className==='score-value').length,0);
 assert.equal(elements.filter(e=>e.attributes.role==='meter').length,0);
 assert(elements.some(e=>e.textContent==='5*'));
-renderScore(chart,'ฐานะการเงิน');
+renderScore(chart,'ดวง "คนรวย"');
 elements=flatten(panel);
 assert.equal(elements.filter(e=>e.className==='score-value').length,1);
 assert.equal(elements.filter(e=>e.className.startsWith('career-star ')).length,0);
 
+renderScore(chart,'ความดี-ความรวย');
+elements=flatten(panel);
+assert.equal(elements.filter(e=>e.className==='score-card').length,2);
+assert.equal(elements.filter(e=>e.className==='score-value').length,2);
+renderScore(chart,'ดวง "บุญ-บาป"');
+assert(flatten(panel).some(e=>e.textContent.includes('รอเพิ่มเงื่อนไข')));
 const texts=[],fills=[];
 const ctx=new Proxy({measureText:t=>({width:Array.from(t).length*9}),fillText:(t,x,y)=>texts.push({t:String(t),x,y}),fill:()=>fills.push(ctx.fillStyle),save(){},restore(){}},{get:(t,k)=>k in t?t[k]:()=>{}});
 globalThis.document={fonts:{ready:Promise.resolve()},createElement:()=>({getContext:()=>ctx})};
@@ -100,18 +106,32 @@ for(const label of ['2','6','7*','5*','3*','4'])assert(texts.some(t=>t.x>1800&&t
 assert(!texts.some(t=>t.t.includes('คะแนนรวมถ่วงน้ำหนัก')));
 assert(texts.every(t=>t.y<canvas.height-15));
 for(const band of result.bands)assert(fills.includes(band.fill));
-assert(!texts.some(t=>t.t==='ชิปปิ้ง'));
+assert(!texts.map(t=>t.t).join('').includes('ชิปปิ้ง'));
 texts.length=0;
 const expanded=await createChartCanvas({chart,calendar,topic:CAREER_TOPIC,expandedCareerStars:[2]});
-assert(texts.some(t=>t.t==='ชิปปิ้ง'));
-assert(!texts.some(t=>t.t==='สัปเหร่อ'));
+assert(texts.map(t=>t.t).join('').includes('ชิปปิ้ง'));
+assert(!texts.map(t=>t.t).join('').includes('สัปเหร่อ'));
 assert(expanded.height>canvas.height);
 assert(texts.every(t=>t.y<expanded.height-15));
 texts.length=0;
 const allExpanded=await createChartCanvas({chart,calendar,topic:CAREER_TOPIC,expandedCareerStars:[1,2,3,4,5,6,7]});
-assert(texts.some(t=>t.t==='สัปเหร่อ'));
+assert(texts.map(t=>t.t).join('').includes('สัปเหร่อ'));
 assert(texts.every(t=>t.y<allExpanded.height-15));
 assert(allExpanded.height>expanded.height);
 delete globalThis.document;
 console.log('✓ Career card and switch back to scores, exported colors/asterisks, no overall score, full height');
-console.log('✓ 156 occupation labels, seven planets, native collapsed disclosures, selective export and full-list height');
+console.log('✓ Merged occupation labels, seven planets, native collapsed disclosures, selective export and full-list height');
+
+let eligible9=0,eligible12=0,excluded=0;
+for(let a=1;a<=7;a++)for(let b=1;b<=7;b++)for(let c=1;c<=7;c++){
+ const result=analyzeCareer(calculateNineBases(a,b,c));
+ const ranks=result.bands.slice(0,2).map(b=>b.rank);
+ for(const item of result.stars){
+  const expected=ranks.includes(item.rank)&&[9,12].includes(item.sum)?item.sum:null;
+  assert.equal(item.extraOccupationBase,expected);
+  if(expected===9)eligible9++;if(expected===12)eligible12++;
+  if(!expected&&[9,12].includes(item.sum))excluded++;
+ }
+}
+assert(eligible9>0&&eligible12>0&&excluded>0);
+console.log({eligible9,eligible12,excluded});

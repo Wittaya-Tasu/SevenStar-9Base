@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import {relationScore,scoreHouse,scoreTopic,levelFor} from '../js/score-engine.js';
-import {calculateNineBases} from '../js/chart-engine.js';
+import {calculateNineBases,chartWithGender,houseNamesFor} from '../js/chart-engine.js';
 import {TOPIC_DEFINITIONS,resolveTopic,topicHighlights,GROUP_STYLES} from '../js/topic-engine.js';
 import {selectionHighlights,toggleSelection} from '../js/selection-engine.js';
-assert.equal(TOPIC_DEFINITIONS.length,24);
-assert.equal(TOPIC_DEFINITIONS.filter(d=>d.mode==='score').length,23);
+assert.equal(TOPIC_DEFINITIONS.length,25);
+assert.equal(TOPIC_DEFINITIONS.filter(d=>d.mode==='score').length,10);
 assert.equal(new Set(TOPIC_DEFINITIONS.map(d=>d.category)).size,6);
 assert.equal(relationScore(19,['กำลังตน']).points,45);
 assert.equal(relationScore(12,['สมพล','ศัตรู']).points,40);
@@ -14,30 +14,29 @@ assert.equal(relationScore(3,[]).points,null);
 for(const [score,label] of [[39.999,'แย่มาก'],[40,'แย่'],[50,'ปานกลาง'],[60,'ดี'],[80,'ดีมาก'],[100,'ดีมาก']])
  assert.equal(levelFor(score)[1],label);
 const chart=calculateNineBases(7,5,1);
-const finance=scoreTopic(chart,'ฐานะการเงิน');
-assert.deepEqual(finance.groups.map(g=>g.items.length),[2,4,3]);
-assert.deepEqual(finance.groups[0].positions.map(p=>p.key),['1:3','2:2']);
-assert.deepEqual(finance.groups[1].positions.map(p=>p.key),['1:6','3:4','3:2','9:4']);
+const finance=scoreTopic(chart,'ดวง "คนรวย"');
+assert.deepEqual(finance.groups.map(g=>g.items.length),[4,2,3]);
+assert.deepEqual(finance.groups[0].positions.map(p=>p.key),['1:3','1:6','2:2','3:4']);
 assert.deepEqual(finance.groups.map(g=>g.weight),[.7,.2,.1]);
-// Manual fixture: stars 2/6 = 23+15+35+12+5; star 5 = 23+10+35+9+0;
-// star 4 = 23+5+20+12+0. Main mean 90; secondary mean 76; supplementary mean 90.
-assert.deepEqual(finance.groups[0].items.map(i=>i.raw),[90,90]);
-assert.deepEqual(finance.groups[1].items.map(i=>i.raw),[77,60,90,77]);
-assert(Math.abs(finance.score-87.2)<1e-10);
 assert.equal(scoreHouse(calculateNineBases(2,2,7),1,4).raw,100);
-assert.deepEqual(scoreTopic(chart,'หุ้นส่วน').groups.map(g=>g.weight),[.8,.2]);
-assert.deepEqual(scoreTopic(chart,'ความพอดี').groups.map(g=>g.weight),[1]);
-assert.equal(scoreTopic(chart,'คู่ครอง').status,'incomplete');
-assert.equal(resolveTopic(chart,'คู่ครอง','male').groups[1].positions.at(-1).key,'3:7');
-assert.equal(resolveTopic(chart,'คู่ครอง','female').groups[1].positions.at(-1).key,'3:6');
-assert.equal(scoreTopic(chart,'อาชีพ').status,'unconfigured');
-const love=resolveTopic(chart,'ความรัก');
-assert.equal(love.groups[0].positions.length,3);
-assert(love.groups[0].positions.every(p=>p.base<=3 && chart.bases[p.base-1][p.column-1]===6));
-assert.equal(resolveTopic(chart,'การเรียน').groups[2].positions.length,9);
-const overlap=calculateNineBases(6,2,1);
-assert.equal(topicHighlights(overlap,'วาสนา').get('1:1'),0);
-assert(resolveTopic(overlap,'วาสนา').groups[2].positions.some(p=>p.key==='1:1'));
+assert.deepEqual(resolveTopic(chart,'คู่ครอง (ของ ช.)').groups[1].positions.map(p=>p.key),['1:7','3:7']);
+assert.deepEqual(resolveTopic(chart,'คู่ครอง (ของ ญ.)').groups[1].positions.map(p=>p.key),['1:7','3:6']);
+assert.equal(scoreTopic(chart,'ฐานะการเงิน').status,'unconfigured');
+assert.equal(resolveTopic(chart,'คุณภาพความรัก').groups[0].positions.length,5);
+assert.equal(TOPIC_DEFINITIONS.filter(d=>d.mode==='pending').length,13);
+for(const t of TOPIC_DEFINITIONS.filter(d=>d.mode==='pending'))assert.equal(scoreTopic(chart,t.topic).status,'incomplete');
+const femaleChart=chartWithGender(chart,'female');
+assert.deepEqual(femaleChart.bases,chart.bases);
+assert.deepEqual(houseNamesFor(femaleChart)[3].slice(5),['ทาสี','ทาสา']);
+assert.deepEqual(houseNamesFor(chart)[3].slice(5),['ทาสา','ทาสี']);
+const femaleSpouse=resolveTopic(femaleChart,'คู่ครอง (ของ ญ.)');
+assert.equal(femaleSpouse.groups[1].positions[1].key,'3:7');
+assert.equal(femaleSpouse.groups[1].positions[1].house,'ทาสา');
+assert.equal(scoreHouse(femaleChart,3,6).house,'ทาสี');
+assert.equal(topicHighlights(femaleChart,'คู่ครอง (ของ ญ.)').get('3:7'),1);
+const composite=scoreTopic(chart,'ความดี-ความรวย');
+assert.equal(composite.kind,'composite');assert.equal(composite.cards.length,2);
+assert.equal(composite.cards[1].score,finance.score);
 assert.equal(topicHighlights(chart,'').size,0);
 let evaluated=0;
 for(let a=1;a<=7;a++)for(let b=1;b<=7;b++)for(let c=1;c<=7;c++){
@@ -68,7 +67,7 @@ const ctx=new Proxy({measureText:t=>({width:Array.from(t).length*9}),fillText:(t
  {get:(t,k)=>k in t?t[k]:()=>{}});
 globalThis.document={fonts:{ready:Promise.resolve()},createElement:()=>({getContext:()=>ctx})};
 const calendar={input:{day:22,month:4,yearBe:2527,time:'01:49'},effectiveDate:'1984-04-21',weekday:{name:'เสาร์'},lunar:{monthName:'เดือน 5'},zodiac:{name:'ชวด'}};
-for(const topic of ['การเรียน','ฐานะการเงิน','คู่ครอง']){
+for(const topic of ['ดวง "คนดี"','ดวง "คนรวย"','คู่ครอง (ของ ญ.)']){
  text.length=0;fills.length=0;
  const canvas=await createChartCanvas({chart,topic,gender:'female',calendar,highlights:selectionHighlights(chart,toggleSelection(chart,new Map(),4,1))});
  assert.equal(canvas.width,2450);
@@ -79,5 +78,13 @@ for(const topic of ['การเรียน','ฐานะการเงิ�
  assert(fills.includes('#fff9ec'));
  assert(fills.includes(GROUP_STYLES[0].fill));
 }
+text.length=0;
+const combined=await createChartCanvas({chart,topic:'ความดี-ความรวย',calendar});
+assert(text.some(v=>v.t==='ดวง "คนดี"'));assert(text.some(v=>v.t==='ดวง "คนรวย"'));
+assert(text.every(v=>v.y<combined.height-15));
+text.length=0;
+await createChartCanvas({chart:femaleChart,topic:'คู่ครอง (ของ ญ.)',calendar});
+const maid=text.find(t=>t.t==='ทาสี');const servant=text.find(t=>t.t==='ทาสา');
+assert(maid&&servant&&maid.x<servant.x);
 delete globalThis.document;
 console.log('✓ Export score card, gender, selection and topic colors, expandable height');

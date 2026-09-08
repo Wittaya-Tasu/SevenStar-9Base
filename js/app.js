@@ -378,7 +378,8 @@ for (const category of new Set(TOPIC_DEFINITIONS.map(d=>d.category))) {
   group.label = category;
   for (const definition of TOPIC_DEFINITIONS.filter(d=>d.category===category)) {
     const option = document.createElement('option');
-    option.value = definition.topic; option.textContent = definition.topic;
+    option.value = definition.topic; option.textContent = definition.topic + (definition.mode==='pending'?'':' *');
+    if(definition.mode==='pending')option.style.color='#aeb4bd';
     group.append(option);
   }
   $("#reading-topic").append(group);

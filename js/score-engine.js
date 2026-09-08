@@ -47,7 +47,7 @@ export function scoreTopic(chart, topic, gender = chart.gender || '') {
   chart=chartWithGender(chart,gender);
   const definition=resolveTopic(chart,topic,gender);
   if(!definition) return {topic,status:'unconfigured'};
-  if(['merit','transition','study'].includes(definition.mode)) return specialTopic(chart,definition);
+  if(['merit','transition','study','spouseAge','love'].includes(definition.mode)) return specialTopic(chart,definition);
   if(definition.mode==='pending') return {topic,status:'incomplete',groups:[],reasons:['รอเพิ่มเงื่อนไข: '+definition.sourceNote]};
   if(definition.mode==='composite') return {topic,kind:'composite',status:'complete',groups:[],cards:definition.children.map(id=>scoreTopic(chart,TOPIC_DEFINITIONS.find(d=>d.id===id).topic,gender))};
   if(definition.mode==='career') return analyzeCareer(chart);
@@ -88,28 +88,70 @@ function oneGroupCard(chart,title,positions,excludePlanet=false) {
  return {topic:title,status:raw===null?'incomplete':'complete',score:raw,raw,groups:[{index:0,label:'ภพหลัก',weight:1,items,positions,raw,contribution:raw}]};
 }
 export function meritCards(items) {
- const sets=[items.slice(0,2),[items[2]],[items[3]]];
- const good=sets.map(g=>g.every(i=>!i.bad.length));
- const bad=sets.map(g=>g.every(i=>i.bad.length>0));
- const goodCount=good.filter(Boolean).length,badCount=bad.filter(Boolean).length;
- const best=goodCount===3&&items.every(i=>i.names.some(n=>n==='มิตรใหญ่'||n==='สมพล'||n.startsWith('ธาตุ')));
- const worst=badCount===3&&items.every(i=>i.major>0&&i.minor===0);
- const goodLevels=[['ไม่เข้าเกณฑ์','#64748b'],['ระดับอ่อน','#6ba5d7'],['ระดับกลาง','#196f45'],['ระดับสูง','#183e75']];
- const badLevels=[['ไม่เข้าเกณฑ์','#64748b'],['ระดับอ่อน','#888888'],['ระดับกลาง','#111111'],['ระดับแรง','#c95560']];
- return [['ดวงบุญ',goodCount,good,best?['ระดับสูงมาก','#a67c00']:goodLevels[goodCount]],['ดวงบาป',badCount,bad,worst?['ระดับรุนแรง','#8b1e2d']:badLevels[badCount]]].map(([topic,count,checks,[label,color]])=>({topic,kind:'qualitative',status:'complete',count,checks,label,color,items,groups:[]}));
+ return [false,true].map(isBad=>{
+  const checks=items.map(i=>Boolean(i.bad.length)===isBad),count=checks.filter(Boolean).length;
+  const topic=isBad?'ดวงบาป':'ดวงบุญ';
+  const label=['ไม่เข้าเกณฑ์','อนุบาล','ประถม','มัธยม','มหาลัย'][count];
+  const color=(isBad?['#64748b','#888888','#111111','#c95560','#8b1e2d']:['#64748b','#6ba5d7','#196f45','#183e75','#a67c00'])[count];
+  const ink=isBad?'#8b1e2d':'#183e75';
+  const lines=items.map((item,i)=>({text:`${i+1}. ${item.house}: ${checks[i]?'เข้าเงื่อนไข':'-'}`,color:checks[i]?ink:'#64748b'}));
+  items.forEach((item,i)=>{if(checks[i])lines.push({text:`${item.house} · ดาว ${item.star} · ${isBad?'เชื่อม '+item.bad.map(b=>b.house).join(', '):'ไม่เชื่อมภพเสีย'}${item.names.length?' · คู่สัมพันธ์ '+item.names.join(' / '):''}`,color:ink});});
+  return {topic:topic+' : '+label,kind:'qualitative',status:'complete',count,checks,label,color,items,groups:[],lines};
+ });
 }
 function specialTopic(chart,definition) {
  let cards;
+ if(definition.mode==='spouseAge') return spouseAge(chart);
+ if(definition.mode==='love') return {topic:definition.topic,kind:'composite',status:'complete',groups:[],cards:[{...scoreTopic(chart,'คุณภาพความรัก'),topic:'ความรัก'},scoreTopic(chart,chart.gender==='female'?'คู่ครอง (ของ ญ.)':'คู่ครอง (ของ ช.)'),marriageLife(chart)]};
  if(definition.mode==='merit')cards=meritCards(definition.groups[0].positions.map(p=>scoreHouse(chart,p.base,p.column)));
  if(definition.mode==='transition') {
   const positions=keys=>keys.map(k=>{const [base,column]=k.split(':').map(Number);return {base,column};});
   cards=[oneGroupCard(chart,'ปิตา · มาตา · พันธุ',positions(['1:4','1:5','2:4'])),oneGroupCard(chart,'ธนัง · โภคา · กดุมภะ · ลาภะ · สุภะ',positions(['1:3','1:6','2:2','3:4','3:2']))];
  }
- if(definition.mode==='study')cards=[[5,'ต้นทุนปัญญา'],[4,'ไหวพริบ,ค.จำ ,ค.สนใจ'],[3,'ค.ขยัน มานะ อดทน ดิ้นรน']].map(([star,title])=>{
+ if(definition.mode==='study')cards=[[5,'ต้นทุนปัญญา'],[4,'ไหวพริบ ความจำ-สนใจ'],[3,'ความขยัน มานะ อดทน']].map(([star,title])=>{
   const positions=definition.groups[0].positions.filter(p=>chart.bases[p.base-1][p.column-1]===star);
   const card=oneGroupCard(chart,title,positions,true);
   if(star===5&&card.groups[0].items.some(i=>i.major>0))card.note='สู้ครู, เรียนต่างถิ่น, สู้เรียน';
   return card;
  });
  return {topic:definition.topic,kind:'composite',status:'complete',cards,groups:[]};
+}
+
+const POWER={1:[6],2:[15],3:[8],4:[17],5:[19],6:[21],7:[10,20]};
+export function spouseAge(chart) {
+ const star=chart.bases[1][6],sum=chart.bases[3][chart.bases[2].indexOf(star)];
+ const groups=[['คู่ครองอายุมากกว่า',[[1,4],[1,5],[1,7]],[[1,4],[1,5],[1,7]]],['คู่ครองอายุน้อยกว่า',[[3,6],[3,7]],[[2,5],[3,6],[3,7]]],['คู่ครองอายุใกล้เคียงกัน',[[1,1]],[[1,1],[2,1]]]];
+ const lines=[];
+ for(const [label,equal,power] of groups){
+  const matches=[];
+  for(const [base,col] of equal)if(chart.bases[base-1][col-1]===star)matches.push('เลขตรง '+houseNamesFor(chart)[base][col-1]);
+  for(const [base,col] of power)if(POWER[chart.bases[base-1][col-1]].includes(sum))matches.push('ฐาน 4 = '+sum+' เป็นเลขกำลังของ '+houseNamesFor(chart)[base][col-1]);
+  if(matches.length){lines.push({text:label,color:'#183e75',bold:true});lines.push({text:matches.join(' · '),color:'#183e75'});}
+ }
+ if(!lines.length)lines.push({text:'ไม่เข้าเกณฑ์อายุคู่ครองที่กำหนด',color:'#64748b'});
+ return {topic:'อายุคู่ครอง',kind:'qualitative',status:'complete',groups:[],color:'#183e75',lines};
+}
+const LIFE_PAIRS={
+ '1/1':['ยศศักดิ์',true],'1/2':['ครัวเรือน',true],'1/3':['ศัตรู ปะทะ',false],'1/4':['ไหวพริบ',true],'1/5':['มิตร ปัญญา',true],'1/6':['สมพล สนับสนุน',true],'1/7':['ธาตุ',true,'ศัตรู เร่งร้อน'],
+ '2/1':['ครัวเรือน',true],'2/2':['เสน่ห์',true],'2/3':['ชู้ ระแวง',false],'2/4':['มิตร รุ่งเรือง',true],
+ '2/5':['เสน่ห์ วิชาการ',true,'ศัตรู ชิงชัง'],'2/6':['สรรเสริญ สำราญ',true],'2/7':['ศัตรู พลักพราก',false],
+ '3/1':['ศัตรู ปะทะ',false],'3/2':['ชู้ ระแวง',false],'3/3':['กล้าแกร่ง แข็งขัน',true],'3/4':['ศัตรู ขัดแย้ง',false],'3/5':['สมพล เด็ดเดี่ยว',true],'3/6':['มิตร เสน่หา พึ่งพา',true],'3/7':['ศัตรู แตกหัก',false],
+ '4/1':['ไหวพริบ',true],'4/2':['มิตร รุ่งเรือง',true],'4/3':['ศัตรู ขัดแย้ง',false],'4/4':['ปฏิภาณ',true],'4/5':['บัณฑิต รอบรู้',true],'4/6':['ธาตุน้ำ เกื้อกูล',true],'4/7':['สมพล คารม',true,'ผิดสัญญา'],
+ '5/1':['มิตร ปัญญา',true],'5/2':['เสน่ห์ วิชาการ',true,'ศัตรู ชิงชัง'],'5/3':['สมพล เด็ดเดี่ยว',true],'5/4':['บัณฑิต รอบรู้',true],'5/5':['ปัญญา',true],'5/6':['ทรัพย์ โชค',true],'5/7':['ศัตรู ปฏิวัติ',false],
+ '6/1':['สมพล สนับสนุน',true],'6/2':['สรรเสริญ สำราญ',true],'6/3':['มิตร เสน่หา พึ่งพา',true],'6/4':['ธาตุน้ำ เกื้อกูล',true],'6/5':['ทรัพย์ โชค',true],'6/6':['เสน่หา สำราญ',true],'6/7':['ศัตรู โทษทุกข์',false],
+ '7/1':['ธาตุ',true,'ศัตรู เร่งร้อน'],'7/2':['ศัตรู พลักพราก',false],'7/3':['ศัตรู แตกหัก',false],'7/4':['สมพล คารม',true,'ผิดสัญญา'],'7/5':['ศัตรู ปฏิวัติ',false],'7/6':['ศัตรู โทษทุกข์',false],'7/7':['ทรหด',true]
+};
+export function marriageLife(chart) {
+ const [a,b,c]=chart.bases.slice(0,3).map(row=>row[6]);
+ const pairs=[[a,b],[a,c],[b,c]].map(([x,y])=>{
+  const entry=LIFE_PAIRS[x+'/'+y];
+  if(!entry)return {x,y,name:'ยังไม่กำหนด',good:null};
+  const enemy=getRelations(x,y,getBadNumbers(chart)).some(r=>['ศัตรู','ศัตรูใหญ่'].includes(r.name));
+  return {x,y,name:entry[2]&&enemy?entry[2]:entry[0],good:entry[2]&&enemy?false:entry[1]};
+ });
+ const unknown=pairs.some(p=>p.good===null),count=pairs.filter(p=>p.good).length;
+ const color=unknown?'#64748b':['#8b1e2d','#111111','#196f45','#a67c00'][count];
+ const lines=pairs.map(p=>({text:`คู่ ${p.x}/${p.y}: ${p.name}`,color:p.good===null?'#64748b':p.good?'#196f45':'#8b1e2d',bold:p.good===true}));
+ if(unknown)lines.push({text:'ยังสรุปสีรวมไม่ได้: ตารางคู่เลขยังไม่ครบ',color:'#64748b'});
+ return {topic:'ชีวิตคู่',kind:'qualitative',status:'complete',groups:[],pairs,color,lines};
 }

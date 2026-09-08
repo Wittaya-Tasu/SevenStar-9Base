@@ -258,9 +258,7 @@ function drawScorePanel(ctx, result, x, y, width, height, measureOnly=false) {
     return cursor-y+24;
   }
   if(result.kind==='qualitative') {
-    line(result.label,28,color,true);line(`เข้าเงื่อนไข ${result.count} จาก 3 ข้อ`);
-    ['อัตตะและตะนุ','พันธุ','สุภะ'].forEach((name,i)=>line(`${i+1}. ${name}: ${result.checks[i]?'เข้าเงื่อนไข':'ไม่เข้าเงื่อนไข'}`));
-    for(const item of result.items) {line(`${item.house} (ฐาน ${item.base}) · ดาว ${item.star}`);line(item.bad.length?'ภพเสีย: '+item.bad.map(b=>b.house+' ฐาน '+b.base).join(', '):'ไม่เชื่อมภพเสีย',16,item.bad.length?'#8b1e2d':COLORS.ink);line('คู่สัมพันธ์: '+(item.names.join(' / ')||'ไม่มี'),16);}
+    for(const item of result.lines||[])line(item.text,17,item.color,item.bold);
     return cursor-y+24;
   }
   line(`${fmt(result.score)}  ·  ${level}`,32,color,true);
@@ -273,15 +271,6 @@ function drawScorePanel(ctx, result, x, y, width, height, measureOnly=false) {
   }
   cursor+=30;
   if(result.note)line(result.note,17,'#8b1e2d');
-  for(const group of result.groups){
-    cursor+=8;
-    line(groupSummary(group,fmt),20,GROUP_STYLES[group.index].stripe,true);
-    for(const item of group.items){
-      line(`${item.house} (ฐาน ${item.base}) ดาว ${item.star} / ฐาน4 ${item.sum}: ${fmt(item.raw)} คะแนน`,17,COLORS.ink,true);
-      detailLines(item).forEach(message=>line(message,16));
-      if(item.bad.length)line('ภพเสีย: '+item.bad.map(b=>`${b.house} ฐาน ${b.base}`).join(', '),16,'#8b1e2d');
-    }
-  }
   return cursor-y+24;
 }
 

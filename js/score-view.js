@@ -14,10 +14,8 @@ function appendScoreCard(panel,result,topic) {
  const title=document.createElement('h3');title.textContent=topic||'คะแนนรายหัวข้อ';card.append(title);
  if(result.kind==='qualitative') {
   card.style.setProperty('--score-color',result.color);
-  const level=document.createElement('p');level.textContent=result.label;level.style.color=result.color;card.append(level);
-  const count=document.createElement('p');count.textContent=`เข้าเงื่อนไข ${result.count} จาก 3 ข้อ`;card.append(count);
-  ['อัตตะและตะนุ','พันธุ','สุภะ'].forEach((name,i)=>{const p=document.createElement('p');p.textContent=`${i+1}. ${name}: ${result.checks[i]?'เข้าเงื่อนไข':'ไม่เข้าเงื่อนไข'}`;card.append(p);});
-  for(const item of result.items){const p=document.createElement('p');p.textContent=`${item.house} (ฐาน ${item.base}) · ดาว ${item.star} · ${item.bad.length?'เชื่อม '+item.bad.map(b=>b.house+' ฐาน '+b.base).join(', '):'ไม่เชื่อมภพเสีย'} · คู่สัมพันธ์ ${item.names.join(' / ')||'ไม่มี'}`;if(item.bad.length)p.className='bad-detail';card.append(p);}
+  title.style.color=result.color;
+  for(const line of result.lines||[]){const p=document.createElement('p');p.textContent=line.text;p.style.color=line.color;p.style.fontWeight=line.bold?'700':'400';card.append(p);}
   return result;
  }
  if(result.kind==='career') { renderCareerCard(card,result);return result; }

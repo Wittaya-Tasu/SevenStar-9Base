@@ -3,7 +3,7 @@ import { HOUSE_NAMES, houseNamesFor, chartWithGender } from './chart-engine.js';
 const stars = (...values) => ({ stars: values });
 const spouse = { byGender: { male: '3:7', female: '3:6' } };
 export const CAREER_TOPIC = 'อาชีพที่เหมาะสม';
-const configured = [
+export const configured = [
  ['ตัวเจ้าชะตา',1001,'ดวง "คนดี"',['1:1','2:1','2:4','3:2'],[stars(5)]],
  ['การเงิน',1002,'ดวง "คนรวย"',['1:3','1:6','2:2','3:4'],['1:1','2:1'],[stars(6)]],
  ['การเงิน',1005,'ร่ำรวย สุขสบาย',['1:3','1:6','2:2','3:4']],
@@ -18,7 +18,8 @@ const configured = [
 export const TOPIC_DEFINITIONS = [
  configured[0],
  {category:'วาสนา',id:1004,topic:'ความดี-ความรวย',mode:'composite',children:[1001,1002],groups:[]},
- ...configured.slice(1),
+ ...configured.slice(1).filter(d=>![1008,1009,1010].includes(d.id)),
+ {category:"ความรัก",id:2016,topic:"ความรัก-ชีวิตคู่",mode:"love",groups:[[{stars:[6],bases:[1,2,3,8,9]},"2:7","1:7","3:7","3:6"],["9:7"]]},
  {category:'การงาน',id:2002,topic:CAREER_TOPIC,mode:'career',groups:[['1:1','2:1','3:3'],['1:3','2:2','1:6','3:4','3:2']]},
  ...[
  ['วาสนา',2001,'ดวง "บุญ-บาป"','หน้า 120'],
@@ -36,6 +37,7 @@ export const TOPIC_DEFINITIONS = [
  ].map(([category,id,topic,sourceNote])=>({category,id,topic,sourceNote,mode:'pending',groups:[]})),
 ];
 for(const t of TOPIC_DEFINITIONS) {
+ if(t.id===2006) Object.assign(t,{mode:'spouseAge',groups:[['2:7'],['1:1','1:4','1:5','1:7','2:1','2:5','3:6','3:7']]});
  if(t.id===2001) Object.assign(t,{mode:'merit',groups:[['1:1','2:1','2:4','3:2']]});
  if(t.id===2004) Object.assign(t,{topic:'พลิก "รวย-จน"',mode:'transition',groups:[['1:4','1:5','2:4','1:3','1:6','2:2','3:4','3:2']]});
  if(t.id===2003) Object.assign(t,{mode:'study',groups:[[{stars:[5,4,3],bases:[1,2,3,8,9]}]]});
@@ -47,7 +49,7 @@ export const GROUP_STYLES = [
 ];
 export function resolveTopic(chart, topic, gender = chart.gender || '') {
   chart=chartWithGender(chart,gender);
-  const definition = TOPIC_DEFINITIONS.find(d => d.topic === topic);
+  const definition = [...TOPIC_DEFINITIONS,...configured].find(d => d.topic === topic);
   if (!definition) return null;
   const missing = [];
   const weights = definition.mode==='career' ? [null,null] : {1:[1],2:[.8,.2],3:[.7,.2,.1]}[definition.groups.length];
@@ -82,6 +84,11 @@ export function resolveTopic(chart, topic, gender = chart.gender || '') {
 export function topicHighlights(chart, topic, gender = chart.gender || '') {
   const colors = new Map();
   const definition=TOPIC_DEFINITIONS.find(d=>d.topic===topic);
+  if(definition?.mode==='love') {
+    for(const topicName of ['คุณภาพความรัก',gender==='female'?'คู่ครอง (ของ ญ.)':'คู่ครอง (ของ ช.)'])for(const [key,index] of topicHighlights(chart,topicName,gender))if(!colors.has(key)||index<colors.get(key))colors.set(key,index);
+    for(const base of [1,2,3])colors.set(`${base}:7`,0);
+    return colors;
+  }
   if(definition?.mode==='composite') {
     for(const id of definition.children) for(const [key,index] of topicHighlights(chart,TOPIC_DEFINITIONS.find(d=>d.id===id).topic,gender)) {
       if(!colors.has(key)||index<colors.get(key)) colors.set(key,index);

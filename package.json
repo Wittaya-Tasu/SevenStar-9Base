@@ -1,9 +1,9 @@
 {
   "name": "sevenstar-9base",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node tests/run-tests.mjs && node tests/calendar-candidate-tests.mjs && node tests/score-tests.mjs && node tests/career-tests.mjs && node tests/v19-tests.mjs"
+    "test": "node tests/run-tests.mjs && node tests/calendar-candidate-tests.mjs && node tests/score-tests.mjs && node tests/career-tests.mjs && node tests/v19-tests.mjs && node tests/v110-tests.mjs"
   }
 }

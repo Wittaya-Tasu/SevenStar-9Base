@@ -23,7 +23,7 @@ assert.deepEqual(resolveTopic(chart,'คู่ครอง (ของ ช.)').gr
 assert.deepEqual(resolveTopic(chart,'คู่ครอง (ของ ญ.)').groups[1].positions.map(p=>p.key),['1:7','3:6']);
 assert.equal(scoreTopic(chart,'ฐานะการเงิน').status,'unconfigured');
 assert.equal(resolveTopic(chart,'คุณภาพความรัก').groups[0].positions.length,5);
-assert.equal(TOPIC_DEFINITIONS.filter(d=>d.mode==='pending').length,8);
+assert.equal(TOPIC_DEFINITIONS.filter(d=>d.mode==='pending').length,7);
 for(const t of TOPIC_DEFINITIONS.filter(d=>d.mode==='pending'))assert.equal(scoreTopic(chart,t.topic).status,'incomplete');
 const femaleChart=chartWithGender(chart,'female');
 assert.deepEqual(femaleChart.bases,chart.bases);

@@ -47,7 +47,7 @@ export function scoreTopic(chart, topic, gender = chart.gender || '') {
   chart=chartWithGender(chart,gender);
   const definition=resolveTopic(chart,topic,gender);
   if(!definition) return {topic,status:'unconfigured'};
-  if(['merit','transition','study','spouseAge','love'].includes(definition.mode)) return specialTopic(chart,definition);
+  if(['merit','transition','study','spouseAge','love','multipleSpouses'].includes(definition.mode)) return specialTopic(chart,definition);
   if(definition.mode==='pending') return {topic,status:'incomplete',groups:[],reasons:['รอเพิ่มเงื่อนไข: '+definition.sourceNote]};
   if(definition.mode==='composite') return {topic,kind:'composite',status:'complete',groups:[],cards:definition.children.map(id=>scoreTopic(chart,TOPIC_DEFINITIONS.find(d=>d.id===id).topic,gender))};
   if(definition.mode==='career') return analyzeCareer(chart);
@@ -101,6 +101,7 @@ export function meritCards(items) {
 }
 function specialTopic(chart,definition) {
  let cards;
+ if(definition.mode==='multipleSpouses') return multipleSpouses(chart);
  if(definition.mode==='spouseAge') return spouseAge(chart);
  if(definition.mode==='love') return {topic:definition.topic,kind:'composite',status:'complete',groups:[],cards:[{...scoreTopic(chart,'คุณภาพความรัก'),topic:'ความรัก'},scoreTopic(chart,chart.gender==='female'?'คู่ครอง (ของ ญ.)':'คู่ครอง (ของ ช.)'),marriageLife(chart)]};
  if(definition.mode==='merit')cards=meritCards(definition.groups[0].positions.map(p=>scoreHouse(chart,p.base,p.column)));
@@ -154,4 +155,31 @@ export function marriageLife(chart) {
  const lines=pairs.map(p=>({text:`คู่ ${p.x}/${p.y}: ${p.name}`,color:p.good===null?'#64748b':p.good?'#196f45':'#8b1e2d',bold:p.good===true}));
  if(unknown)lines.push({text:'ยังสรุปสีรวมไม่ได้: ตารางคู่เลขยังไม่ครบ',color:'#64748b'});
  return {topic:'ชีวิตคู่',kind:'qualitative',status:'complete',groups:[],pairs,color,lines};
+}
+
+// Topic 2007: each house is evaluated against its own base-3/base-4 pair.
+export function multipleSpouseRules({patni,middle,tasi,labha,atta,tanu,bandhu,supha}) {
+ const enemy=item=>item.names.some(n=>n==='ศัตรู'||n==='ศัตรูใหญ่');
+ const adverse=item=>item.bad.length>0&&enemy(item);
+ const favorable=item=>item.bad.length===0&&!enemy(item);
+ return [
+  patni.star===middle.star||patni.star===tasi.star,
+  [1,3,7].includes(patni.star)&&patni.star===labha.star&&enemy(patni),
+  (adverse(atta)||adverse(tanu))&&adverse(bandhu)&&adverse(supha),
+  (favorable(atta)||favorable(tanu))&&favorable(bandhu)&&favorable(supha),
+ ];
+}
+export function multipleSpouses(chart) {
+ const names=houseNamesFor(chart);
+ const checks=multipleSpouseRules({
+  patni:scoreHouse(chart,2,7),middle:scoreHouse(chart,1,7),
+  tasi:scoreHouse(chart,3,names[3].indexOf('ทาสี')+1),labha:scoreHouse(chart,3,4),
+  atta:scoreHouse(chart,1,1),tanu:scoreHouse(chart,2,1),bandhu:scoreHouse(chart,2,4),supha:scoreHouse(chart,3,2),
+ });
+ const labels=['คู่ครองคนเดียว','คู่ครองมาก','มุ่งมีคู่ครองมาก','คู่ครองคนเดียว'];
+ const colors=['#196f45','#c95560','#8b1e2d','#196f45'];
+ const lines=[];
+ checks.forEach((passes,i)=>{if(passes){lines.push({text:labels[i],color:colors[i],bold:true});lines.push({text:`เข้าเกณฑ์ข้อ ${i+1}`,color:'#64748b'});}});
+ if(!lines.length)lines.push({text:'ไม่เข้าเกณฑ์ที่กำหนด',color:'#64748b'});
+ return {topic:'มากคู่ครอง',kind:'qualitative',status:'complete',groups:[],checks,lines,color:'#64748b'};
 }

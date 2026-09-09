@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+import {multipleSpouseRules,scoreTopic,scoreHouse} from '../js/score-engine.js';
+import {calculateNineBases,chartWithGender,houseNamesFor} from '../js/chart-engine.js';
+import {TOPIC_DEFINITIONS,topicHighlights} from '../js/topic-engine.js';
+const item=(star,bad=false,enemy=false)=>({star,bad:bad?[{}]:[],names:enemy?['ศัตรู']:[]});
+const base={patni:item(1),middle:item(2),tasi:item(3),labha:item(4),atta:item(5),tanu:item(6),bandhu:item(4),supha:item(2)};
+assert.deepEqual(multipleSpouseRules(base),[false,false,false,true]);
+assert(multipleSpouseRules({...base,middle:item(1)})[0]);
+assert(multipleSpouseRules({...base,tasi:item(1)})[0]);
+assert(multipleSpouseRules({...base,patni:item(3,false,true),labha:item(3)})[1]);
+assert(!multipleSpouseRules({...base,patni:item(2,false,true),labha:item(2)})[1]);
+assert(!multipleSpouseRules({...base,patni:item(3),labha:item(3)})[1]);
+const adverse={...base,atta:item(1,true,true),bandhu:item(3,true,true),supha:item(7,true,true)};
+assert(multipleSpouseRules(adverse)[2]);
+assert(multipleSpouseRules({...adverse,atta:item(1),tanu:item(3,true,true)})[2]);
+assert(!multipleSpouseRules({...adverse,bandhu:item(3,true,false)})[2]);
+assert(!multipleSpouseRules({...base,supha:item(2,true,false)})[3]);
+assert(!multipleSpouseRules({...base,supha:item(2,false,true)})[3]);
+const contradictory={...base,middle:item(1),atta:item(1,true,true),bandhu:item(3,true,true),supha:item(7,true,true)};
+assert.deepEqual(multipleSpouseRules(contradictory),[true,false,true,false]);
+for(let a=1;a<=7;a++)for(let b=1;b<=7;b++)for(let c=1;c<=7;c++)for(const gender of ['male','female']){
+ const chart=chartWithGender(calculateNineBases(a,b,c),gender),result=scoreTopic(chart,'มากคู่ครอง');
+ assert.equal(result.kind,'qualitative');assert.equal(result.checks.length,4);assert(!('score' in result));
+ const tasi=houseNamesFor(chart)[3].indexOf('ทาสี')+1;
+ assert.equal(result.checks[0],chart.bases[1][6]===chart.bases[0][6]||chart.bases[1][6]===chart.bases[2][tasi-1]);
+ assert(topicHighlights(chart,'มากคู่ครอง',gender).has(`3:${tasi}`));
+ assert.equal(result.lines.filter(l=>l.bold).length,result.checks.filter(Boolean).length);
+}
+assert.equal(TOPIC_DEFINITIONS.find(t=>t.id===2007).mode,'multipleSpouses');
+console.log('✓ Topic 2007: all criteria, own-star enemy checks, OR/AND, concurrent matches, 343 codes × both genders');

@@ -37,6 +37,7 @@ export const TOPIC_DEFINITIONS = [
  ].map(([category,id,topic,sourceNote])=>({category,id,topic,sourceNote,mode:'pending',groups:[]})),
 ];
 for(const t of TOPIC_DEFINITIONS) {
+ if(t.id===2007) Object.assign(t,{mode:'multipleSpouses',groups:[['2:7','1:7','3:7','3:4','1:1','2:1','2:4','3:2']]});
  if(t.id===2006) Object.assign(t,{mode:'spouseAge',groups:[['2:7'],['1:1','1:4','1:5','1:7','2:1','2:5','3:6','3:7']]});
  if(t.id===2001) Object.assign(t,{mode:'merit',groups:[['1:1','2:1','2:4','3:2']]});
  if(t.id===2004) Object.assign(t,{topic:'พลิก "รวย-จน"',mode:'transition',groups:[['1:4','1:5','2:4','1:3','1:6','2:2','3:4','3:2']]});

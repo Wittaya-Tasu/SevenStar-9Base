@@ -22,7 +22,7 @@ function paint(){
  if(related)cell.classList.add('yam-linked');
  const house=element('span',base===4?'':HOUSE_NAMES[base]?.[col]||'','house');const appearance=houseAppearance(base,col+1);house.style.color=appearance.color;house.style.fontWeight=appearance.weight;
  const number=element('span',String(value),'kala-number');const marker=markerFor(base,col+1,value,taksa);
- if(marker.kind){number.classList.add(marker.kind);if(marker.ring)number.classList.add('marker-ring');number.title=marker.kind==='kali'?'กาลี':'ศรี';}
+ if(marker.kind && !(base>=5 && base<=7)){number.classList.add(marker.kind);if(marker.ring)number.classList.add('marker-ring');number.title=marker.kind==='kali'?'กาลี':'ศรี';}
  cell.append(house,number);
  if(base===4)cell.append(element('span',chart.base4Names[col],'result-name'+(isSpecialResult(value)?'':' plain-result')));
  row.append(cell);
@@ -36,7 +36,7 @@ function paint(){
  entries.forEach(entry=>{const button=element('button',`${entry.range}  ·  ${entry.number}`,'yam-slot');button.type='button';const selected=entry.period===active.period&&entry.slot===active.slot;button.setAttribute('aria-pressed',String(selected));if(selected)button.classList.add('active');if(entry.period===yam.period&&entry.slot===yam.slot)button.title='ยามตามเวลาที่ระบุ';button.onclick=()=>{live=false;chosen=entry;paint();};section.append(button);});tableRoot.append(section);
  });
  const taksaGrid=$('#kala-taksa');taksaGrid.replaceChildren();
- [1,2,3,6,null,4,8,5,7].forEach(n=>{const cell=element('div',undefined,'taksa-cell');if(n){cell.append(element('span',taksa[n]),element('strong',String(n)));if(n===calendar.seeds.day)cell.classList.add('active');}taksaGrid.append(cell);});
+ [1,2,3,6,null,4,8,5,7].forEach(n=>{const cell=element('div',undefined,'taksa-cell');if(n){cell.append(element('span',taksa[n]),element('strong',String(n)));if(n===calendar.seeds.day)cell.classList.add('active');if(taksa[n]==='ศรี')cell.classList.add('taksa-sri');if(taksa[n]==='กาลี')cell.classList.add('taksa-kali');}taksaGrid.append(cell);});
 }
 async function refresh(){const ticket=++request;try{const input=live?nowInput():readInput();if(live)setInput(input);const value=await kalaAt(input);if(ticket!==request)return;current=value;chosen=null;$('#kala-error').textContent='';paint();}catch(e){if(ticket===request){$('#kala-error').textContent=e.message;$('#kala-chart').replaceChildren();$('#kala-yams').replaceChildren();$('#kala-taksa').replaceChildren();$('#kala-summary').textContent='';}}}
 export function enterKala(){if(!current||live)refresh();}

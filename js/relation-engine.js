@@ -114,7 +114,7 @@ export function getLinkedCellKeys(chart, selectedBase, selectedColumn) {
 
   chart.bases.forEach((values, baseIndex) => {
     values.forEach((value, columnIndex) => {
-      if (value === valueToRepeat) equal.add(`${baseIndex + 1}:${columnIndex + 1}`);
+      if (baseIndex !== 3 && value === valueToRepeat) equal.add(`${baseIndex + 1}:${columnIndex + 1}`);
     });
   });
 

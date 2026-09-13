@@ -1,3 +1,4 @@
+import { enterKala } from "./kala-view.js";
 import { renderScore } from "./score-view.js";
 import { TOPIC_DEFINITIONS, GROUP_STYLES, topicHighlights } from "./topic-engine.js";
 import { calculateAge, calculateCalendar } from "./calendar-engine.js";
@@ -59,6 +60,7 @@ function clearError() {
 function setView(name) {
   $$(".tab").forEach((button) => button.classList.toggle("is-active", button.dataset.view === name));
   $$(".view").forEach((view) => view.classList.toggle("is-active", view.id === `view-${name}`));
+  if (name === "kala") enterKala();
   if (name === "favorites") renderFavorites();
 }
 

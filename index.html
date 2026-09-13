@@ -17,12 +17,13 @@
       <p class="eyebrow">โยราศาสตร์ วิทยา</p>
       <h1>เลข 7 ตัว 9 ฐาน</h1>
     </div>
-    <span class="version-badge">รุ่นทดสอบ 1.10</span>
+    <span class="version-badge">รุ่นทดสอบ 1.11</span>
   </header>
 
   <nav class="tabs" aria-label="เมนูหลัก">
     <button class="tab is-active" data-view="natal" type="button">ดวงเดิม</button>
     <button class="tab" data-view="transit" type="button">ดวงจร</button>
+    <button class="tab" data-view="kala" type="button">กาลชะตา</button>
     <button class="tab" data-view="favorites" type="button">รายการโปรด</button>
   </nav>
 
@@ -159,6 +160,26 @@
       <p>หน้านี้แยกจากดวงเดิม และจะเปิดใช้งานเมื่อกฎดวงจรได้รับการยืนยันแล้ว</p>
     </section>
 
+    <section id="view-kala" class="view">
+      <div class="input-panel">
+        <h2>กาลชะตา</h2><p>เปลี่ยนวันเวลา 06:01 น.</p>
+        <form id="kala-form" class="kala-controls">
+          <label>วันที่<input id="kala-day" type="number" min="1" max="31" required></label>
+          <label>เดือน<input id="kala-month" type="number" min="1" max="12" required></label>
+          <label>ปี พ.ศ.<input id="kala-yearBe" type="number" min="2469" max="2669" required></label>
+          <label>เวลา<input id="kala-time" type="time" required></label>
+          <button type="submit">แสดงกาลชะตา</button><button type="button" id="kala-now">กลับเวลาปัจจุบัน</button>
+        </form>
+        <p id="kala-state" aria-live="polite"></p><p id="kala-summary"></p><p id="kala-error" role="alert"></p>
+      </div>
+      <div class="kala-layout">
+        <div class="kala-scroll"><div id="kala-chart"></div></div>
+        <aside class="kala-side"><h2>ตารางเลขยาม</h2><div id="kala-yams"></div>
+          <h2>ทักษา</h2><div id="kala-taksa"></div>
+          <p>สามเหลี่ยมแดง: กาลี · สี่เหลี่ยมเขียว: ศรี</p><p>วงกลม: ตรงภพเสียหรือภพดีตามเกณฑ์</p>
+        </aside>
+      </div>
+    </section>
     <section id="view-favorites" class="view">
       <div class="favorites-heading">
         <div><h2>รายการโปรด</h2><p>ข้อมูลทดสอบเก็บในเบราว์เซอร์เครื่องนี้</p></div>
@@ -169,7 +190,7 @@
   </main>
 
   <footer>
-    <span>Calendar Engine 1.0 · Scoring Rules 2.0 · UI 1.10</span>
+    <span>Calendar Engine 1.0 · Scoring Rules 2.0 · UI 1.11</span>
     <span>ช่วงข้อมูล พ.ศ. 2469–2669</span>
   </footer>
   <script type="module" src="./js/app.js"></script>

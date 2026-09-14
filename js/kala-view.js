@@ -1,3 +1,4 @@
+import {exportKala} from './kala-export.js';
 import {kalaAt,markerFor} from './kala-engine.js';
 import {HOUSE_NAMES} from './chart-engine.js';
 import {houseAppearance,isSpecialResult} from './selection-engine.js';
@@ -12,7 +13,7 @@ function paint(){
  const {calendar,chart,taksa,table,yam}=current,active=chosen||yam;
  $('#kala-state').textContent=live?'เวลาปัจจุบัน · ประเทศไทย':'หยุดเวลาชั่วคราว';
  const date=new Date(calendar.effectiveDate+'T12:00:00Z');
- $('#kala-summary').textContent=new Intl.DateTimeFormat('th-TH',{timeZone:'Asia/Bangkok',dateStyle:'full'}).format(date)+` · ปี${calendar.zodiac.name} · รหัส ${Object.values(calendar.seeds).join('-')} · เลขยาม ${active.number}`+(calendar.shifted?' · ใช้วันก่อนหน้า เนื่องจากยังไม่ถึง 06:01 น.':'');
+ $('#kala-summary').textContent=new Intl.DateTimeFormat('th-TH',{timeZone:'Asia/Bangkok',dateStyle:'full'}).format(date)+` · ปี${calendar.zodiac.name} · รหัส ${Object.values(calendar.seeds).join('-')} · เลขยาม ${active.number}${active.subperiod!==undefined?' · ยาม'+['ต้น','กลาง','ปลาย'][active.subperiod]:''}`+(calendar.shifted?' · ใช้วันก่อนหน้า เนื่องจากยังไม่ถึง 06:01 น.':'');
  const grid=$('#kala-chart');grid.replaceChildren();
  chart.bases.forEach((values,index)=>{
  const base=index+1,row=element('div',undefined,'kala-row'+(base>=5&&base<=7?' secondary':''));row.append(element('div',`ฐาน ${base}`,'base-label'));
@@ -20,6 +21,7 @@ function paint(){
  const cell=element('div',undefined,'kala-cell');
  const related=base===4?chart.bases[2][col]===active.number:value===active.number;
  if(related)cell.classList.add('yam-linked');
+ if(active.subperiod!==undefined&&base===active.subperiod+1&&value===active.number){const dot=element('span',undefined,'yam-sub-dot');dot.title='ยาม'+['ต้น','กลาง','ปลาย'][active.subperiod];cell.append(dot);}
  const house=element('span',base===4?'':HOUSE_NAMES[base]?.[col]||'','house');const appearance=houseAppearance(base,col+1);house.style.color=appearance.color;house.style.fontWeight=appearance.weight;
  const number=element('span',String(value),'kala-number');const marker=markerFor(base,col+1,value,taksa);
  if(marker.kind && !(base>=5 && base<=7)){number.classList.add(marker.kind);if(marker.ring)number.classList.add('marker-ring');number.title=marker.kind==='kali'?'กาลี':'ศรี';}
@@ -38,9 +40,15 @@ function paint(){
  const taksaGrid=$('#kala-taksa');taksaGrid.replaceChildren();
  [1,2,3,6,null,4,8,5,7].forEach(n=>{const cell=element('div',undefined,'taksa-cell');if(n){cell.append(element('span',taksa[n]),element('strong',String(n)));if(n===calendar.seeds.day)cell.classList.add('active');if(taksa[n]==='ศรี')cell.classList.add('taksa-sri');if(taksa[n]==='กาลี')cell.classList.add('taksa-kali');}taksaGrid.append(cell);});
 }
-async function refresh(){const ticket=++request;try{const input=live?nowInput():readInput();if(live)setInput(input);const value=await kalaAt(input);if(ticket!==request)return;current=value;chosen=null;$('#kala-error').textContent='';paint();}catch(e){if(ticket===request){$('#kala-error').textContent=e.message;$('#kala-chart').replaceChildren();$('#kala-yams').replaceChildren();$('#kala-taksa').replaceChildren();$('#kala-summary').textContent='';}}}
+async function refresh(){const ticket=++request;try{const input=live?nowInput():readInput();if(live)setInput(input);const value=await kalaAt(input);if(ticket!==request)return;current=value;chosen=null;$('#kala-error').textContent='';paint();}catch(e){if(ticket===request){current=null;$('#kala-error').textContent=e.message;$('#kala-chart').replaceChildren();$('#kala-yams').replaceChildren();$('#kala-taksa').replaceChildren();$('#kala-summary').textContent='';}}}
 export function enterKala(){if(!current||live)refresh();}
 $('#kala-form').addEventListener('submit',e=>{e.preventDefault();live=false;refresh();});
 $('#kala-form').addEventListener('change',()=>{live=false;refresh();});
 $('#kala-now').onclick=()=>{live=true;refresh();};
 setInterval(()=>{if(live&&$('#view-kala').classList.contains('is-active'))refresh();},60000);
+
+for(const format of ['png','pdf'])$('#kala-'+format).onclick=async()=>{
+ if(!current){$('#kala-error').textContent='กรุณาระบุวันเวลาให้ถูกต้องก่อนบันทึก';return;}
+ const buttons=['png','pdf'].map(f=>$('#kala-'+f));buttons.forEach(b=>b.disabled=true);
+ try{await exportKala(current,chosen||current.yam,format);}catch(e){$('#kala-error').textContent='บันทึกไม่สำเร็จ: '+e.message;}finally{buttons.forEach(b=>b.disabled=false);}
+};

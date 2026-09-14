@@ -262,3 +262,13 @@ footer { display: flex; justify-content: space-between; gap: 12px; padding: 20px
 #view-kala .secondary .kala-number{font-size:13px;}
 #kala-taksa .taksa-sri{background:#d7efdc;border:2px solid #287b48;color:#175f34;}
 #kala-taksa .taksa-kali{background:#f8dce0;border:2px solid #cd7c89;color:#922337;}
+
+/* V1.13: align the last chart row with the bottom of the Taksa grid. */
+.kala-scroll{padding-bottom:17px;box-sizing:border-box;}
+#kala-chart{display:grid;height:100%;grid-template-rows:repeat(3,minmax(86px,1fr)) auto minmax(86px,1fr) repeat(3,48px) repeat(2,minmax(86px,1fr));gap:7px;}
+#kala-chart .kala-row{margin-bottom:0;}
+.kala-side{display:flex;flex-direction:column;}
+#kala-taksa{margin-top:auto;}
+.kala-cell{position:relative;}
+.yam-sub-dot{position:absolute;top:7px;left:7px;width:10px;height:10px;background:#b78613;border-radius:50%;}
+@media(max-width:950px){#kala-chart{height:auto;}.kala-scroll{padding-bottom:0;}#kala-taksa{margin-top:0;}}

@@ -6,7 +6,7 @@ export function yamAt(weekday,time){
  const [h,m]=time.split(':').map(Number),minutes=h*60+m;
  const offset=(minutes-361+1440)%1440,night=offset>=720,slot=Math.floor((offset%720)/90);
  const cycle=night?NIGHT:DAY;
- return {period:night?'night':'day',slot,number:cycle[(cycle.indexOf(weekday)+slot)%7]};
+ return {subperiod:Math.floor((offset%90)/30),period:night?'night':'day',slot,number:cycle[(cycle.indexOf(weekday)+slot)%7]};
 }
 export function yamTable(weekday){return [DAY,NIGHT].map((cycle,period)=>Array.from({length:8},(_,slot)=>{
  const start=(361+period*720+slot*90)%1440,end=(start+89)%1440;

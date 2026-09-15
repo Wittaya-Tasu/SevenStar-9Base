@@ -31,6 +31,7 @@ export async function kalaCanvas(state,active){
  if(marker.kind==='kali'){ctx.moveTo(center,ny-25);ctx.lineTo(center+25,ny+22);ctx.lineTo(center-25,ny+22);ctx.closePath();ctx.fill();}else ctx.fillRect(center-22,ny-22,44,44);ctx.restore();
  if(marker.ring){ctx.beginPath();ctx.arc(center,ny,31,0,Math.PI*2);ctx.strokeStyle=marker.kind==='kali'?'#a51d30':'#176b3b';ctx.lineWidth=2;ctx.stroke();}
  }
+ if(state.selectedMeaning?.keys.includes(`${base}:${c+1}`)){for(const r of [38,44]){ctx.beginPath();ctx.arc(center,ny,r,0,Math.PI*2);ctx.strokeStyle='#6541a5';ctx.lineWidth=2;ctx.stroke();}}
  if(base!==4&&!(base>=5&&base<=7)){const a=houseAppearance(base,c+1);text(HOUSE_NAMES[base]?.[c]||'',center,y+25,19,a.color,a.weight===700,'center',cw-12);}
  text(value,center,base>=5&&base<=7?y+h/2:ny,base>=5&&base<=7?17:34,'#24314f',!(base>=5&&base<=7),'center');
  if(base===4)text(state.chart.base4Names[c],center,y+h-26,18,isSpecialResult(value)?'#946300':'#111',isSpecialResult(value),'center',cw-12);
@@ -43,7 +44,8 @@ export async function kalaCanvas(state,active){
  state.table.forEach((entries,p)=>{const x=sx+p*225;text(p?'กลางคืน':'กลางวัน',x+104,top+55,22,'#24314f',true,'center');entries.forEach(e=>{const yy=top+80+e.slot*54,selected=e.period===active.period&&e.slot===active.slot;box(x,yy,210,46,selected?'#e1efff':'#fff',selected?'#295f9b':'#ccd6e5');text(`${e.range} · ${e.number}`,x+105,yy+23,19,'#24314f',selected,'center',200);});});
  const th=95,ty=bottom-3*th-16;text('ทักษา',sx,ty-25,26,'#24314f',true);
  [1,2,3,6,null,4,8,5,7].forEach((n,index)=>{if(!n)return;const x=sx+(index%3)*150,yy=ty+Math.floor(index/3)*(th+8),label=state.taksa[n],fill=label==='ศรี'?'#d7efdc':label==='กาลี'?'#f8dce0':n===cal.seeds.day?'#e1efff':'#fff';box(x,yy,140,th,fill);text(label,x+70,yy+25,20,'#24314f',false,'center');text(n,x+70,yy+64,32,'#24314f',true,'center');});
- text('โยราศาสตร์ วิทยา · V1.13',1970,1165,16,'#8c99ab',false,'right');
+ if(state.selectedMeaning)text('ความหมายตามภพ: '+state.selectedMeaning.text,30,1135,19,'#6541a5');
+ text('โยราศาสตร์ วิทยา · V1.15',1970,1165,16,'#8c99ab',false,'right');
  return canvas;
 }
 export async function exportKala(state,active,format){

@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {HOUSE_MEANINGS} from '../js/house-meanings.js';
+import {HOUSE_NAMES} from '../js/chart-engine.js';
+import {kalaAt} from '../js/kala-engine.js';
+import {kalaCanvas} from '../js/kala-export.js';
+import {setCalendarDatasetForTests} from '../js/calendar-engine.js';
+setCalendarDatasetForTests(JSON.parse(fs.readFileSync(new URL('../data/lunar-month-boundaries.json',import.meta.url))));
+assert.equal(HOUSE_MEANINGS.length,5);
+for(const g of HOUSE_MEANINGS)for(const i of g.items)for(const k of i.keys){const [b,c]=k.split(':');assert(HOUSE_NAMES[b][c-1],k);}
+const father=HOUSE_MEANINGS[0].items.find(i=>i.text==='พ่อ');assert.deepEqual(father.keys,['1:4']);
+const state=await kalaAt({day:14,month:9,yearBe:2569,time:'21:06'});
+assert.equal(state.taksa[2],'บริวาร');assert.equal(state.yam.number,3);
+const arcs=[],texts=[];
+const ctx=new Proxy({arc:(...a)=>arcs.push(a),fillText:(...a)=>texts.push(a)},{get:(o,k)=>k in o?o[k]:()=>{}});
+globalThis.document={fonts:{ready:Promise.resolve()},createElement:()=>({getContext:()=>ctx})};
+await kalaCanvas({...state,selectedMeaning:father},state.yam);
+assert.equal(arcs.filter(a=>a[2]===38||a[2]===44).length,2);
+assert(texts.some(a=>a[0]==='ความหมายตามภพ: พ่อ'));
+arcs.length=0;await kalaCanvas(state,state.yam);assert.equal(arcs.filter(a=>a[2]===38||a[2]===44).length,0);
+console.log('✓ Meaning mappings, selected/export rings, clear selection and weekday Taksa');

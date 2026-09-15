@@ -272,3 +272,13 @@ footer { display: flex; justify-content: space-between; gap: 12px; padding: 20px
 .kala-cell{position:relative;}
 .yam-sub-dot{position:absolute;top:7px;left:7px;width:10px;height:10px;background:#b78613;border-radius:50%;}
 @media(max-width:950px){#kala-chart{height:auto;}.kala-scroll{padding-bottom:0;}#kala-taksa{margin-top:0;}}
+
+.kala-meanings{margin-top:24px;padding:20px;background:#fff;border:1px solid #ccd6e5;border-radius:12px}
+.meaning-scroll{overflow-x:auto;margin-top:12px;max-height:600px}
+#kala-meaning-table{width:100%;min-width:700px;border-collapse:collapse;table-layout:fixed;text-align:left}
+#kala-meaning-table th{position:sticky;top:0;background:#eef2f8;padding:12px;z-index:1}
+#kala-meaning-table td{padding:5px 8px;vertical-align:top;border-bottom:1px solid #edf0f5}
+.meaning-button{background:transparent;border:0;text-align:left;width:100%;padding:7px 8px;font:inherit;color:#24314f;border-radius:6px;cursor:pointer}
+.meaning-button:hover,.meaning-button[aria-pressed="true"]{background:#e8e3fa;color:#563d95}
+.meaning-button:focus-visible{outline:2px solid #563d95;outline-offset:1px}
+#kala-chart .meaning-selected{outline:6px double #6541a5;outline-offset:7px;border-radius:50%}
